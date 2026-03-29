@@ -12,7 +12,8 @@ export default function LiveUI({
   processing,
   title,
   interviewEnded,
-  generateReport
+  generateReport,
+  jobId
 }) {
   const router = useRouter();
 
@@ -24,22 +25,22 @@ export default function LiveUI({
   const hasGeneratedRef = useRef(false);
 
   // ✅ GENERATE REPORT (ONLY AUTO CASE)
-  const handleGenerate = async () => {
-    if (hasGeneratedRef.current) return;
+ const handleGenerate = async () => {
+  if (hasGeneratedRef.current) return;
 
-    hasGeneratedRef.current = true;
-    setGeneratingReport(true);
+  hasGeneratedRef.current = true;
+  setGeneratingReport(true);
 
-    try {
-      await generateReport();
-    } catch (e) {
-      console.log("Report failed but continuing...");
-    }
+  try {
+    await generateReport();
+  } catch (e) {
+    console.log("Report failed but continuing...");
+  }
 
-    setTimeout(() => {
-      router.push("/login/dashboard");
-    }, 1500);
-  };
+  setTimeout(() => {
+    router.push(`/login/dashboard/${jobId}`); // ✅ FINAL FIX
+  }, 1500);
+};
 
   // ✅ AUTO INTERVIEW END → DIRECT GENERATE
   useEffect(() => {

@@ -7,6 +7,11 @@ const UserSchema = new mongoose.Schema({
     unique: true,
     index: true,
   },
+
+  keywords: {
+  type: [String],
+  default: [],
+},
   name: String,
   email: String,
   role: String,

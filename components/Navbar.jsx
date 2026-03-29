@@ -5,7 +5,7 @@ import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 export function Header() {
   return (
-    <header className="w-full flex items-center justify-between px-10 py-6 bg-white">
+    <header className="w-full flex items-center justify-between px-10 py-6  bg-gradient-to-br from-black via-[#0f172a] to-blue-900  text-white">
 
       {/* Logo */}
       <div className="flex items-center gap-2">
@@ -14,7 +14,7 @@ export function Header() {
       </div>
 
       {/* Links */}
-      <nav className="hidden md:flex items-center gap-8 text-gray-700">
+      <nav className="hidden md:flex items-center gap-8 text-white">
         <a href="#">Solutions</a>
         <a href="#">Enterprise</a>
         <a href="#">Resources</a>
@@ -28,7 +28,7 @@ export function Header() {
        <SignedOut>
   <Link
     href="/sign-in"
-    className="text-gray-700 hover:text-black font-medium"
+    className="text-white hover:text-gray-300 font-medium"
   >
     Sign In
   </Link>

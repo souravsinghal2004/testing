@@ -487,7 +487,8 @@ const generateReport = async () => {
     setupPopup,
     title,
     interviewEnded,
-    generateReport
+    generateReport,
+    jobId
   };
 
 

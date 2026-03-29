@@ -2,12 +2,15 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Navbar";
 
 export default function FeedbackPage() {
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
+
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -15,80 +18,167 @@ export default function FeedbackPage() {
     }
   }, [isLoaded, isSignedIn, router]);
 
+  // 🔥 FETCH ALL REPORTS FOR USER
+  useEffect(() => {
+    if (!isLoaded || !user) return;
+
+    const fetchReports = async () => {
+      try {
+        const res = await fetch(`/api/feedbackreport?userId=${user.id}`);
+        const data = await res.json();
+        setReports(data || []);
+      } catch (err) {
+        console.error("Error fetching reports", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [isLoaded, user]);
+
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50  bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
- <Header />
-      {/* Sidebar */}
-      <div className=" flex">
-      <aside className="w-64 bg-white border-r px-6 py-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100">
-        <h2 className="text-xl font-bold text-blue-600 mb-8">
-          Candidate Panel
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+      <Header />
 
-        <nav className="space-y-4 text-gray-700">
-          <button onClick={() => router.push("/login")} className="block w-full text-left hover:text-blue-600">
-            💼 Available Jobs
-          </button>
-          
-          <button onClick={() => router.push("/login/results")} className="block w-full text-left hover:text-blue-600">
-            📊 Interview Results
-          </button>
-          <button className="block w-full text-left font-semibold text-blue-600">
-            🧠 Skill Feedback
-          </button>
-          <button onClick={() => router.push("/login/profile")} className="block w-full text-left hover:text-blue-600">
-            📄 Profile & Resume
-          </button>
-        </nav>
-      </aside>
+      <div className="flex">
+        {/* 🔹 SIDEBAR */}
+        <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+          <h2 className="text-xl font-bold text-blue-400 mb-8">
+            Candidate Panel
+          </h2>
 
-      {/* Main Content */}
-      <main className="flex-1 p-10">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">
-          Skill Feedback
-        </h1>
+          <nav className="space-y-4">
+            <button
+              onClick={() => router.push("/login")}
+              className="block w-full text-left hover:text-blue-400"
+            >
+              💼 Available Jobs
+            </button>
 
-        <p className="text-gray-600 mb-8">
-          AI-generated feedback based on your interview responses to help you
-          improve future performance.
-        </p>
+            <button
+              onClick={() => router.push("/login/results")}
+              className="block w-full text-left hover:text-blue-400"
+            >
+              📊 Interview Results
+            </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button className="block w-full text-left font-semibold text-blue-400">
+              🧠 Skill Feedback
+            </button>
 
-          {/* Strengths */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="font-semibold text-lg mb-3 text-green-600">
-              ✅ Strengths
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              <li>Strong understanding of core concepts</li>
-              <li>Clear communication skills</li>
-              <li>Good problem-solving approach</li>
-            </ul>
-          </div>
+            <button
+              onClick={() => router.push("/login/profile")}
+              className="block w-full text-left hover:text-blue-400"
+            >
+              📄 Profile
+            </button>
+          </nav>
+        </aside>
 
-          {/* Improvements */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="font-semibold text-lg mb-3 text-yellow-600">
-              ⚠️ Areas for Improvement
-            </h3>
-            <ul className="text-sm text-gray-700 space-y-2">
-              <li>Optimize time complexity explanations</li>
-              <li>Provide more real-world examples</li>
-              <li>Improve confidence in system design answers</li>
-            </ul>
-          </div>
+        {/* 🔹 MAIN */}
+        <main className="flex-1 p-10">
+          <h1 className="text-3xl font-bold mb-6 text-blue-300">
+            AI Skill Feedback
+          </h1>
 
-        </div>
+          {loading ? (
+            <div>Loading reports...</div>
+          ) : reports.length === 0 ? (
+            <div>No reports found</div>
+          ) : (
+            <div className="space-y-10">
+              {reports.map((report, index) => {
+                const overallScore =
+                  Object.values(report.scores || {}).reduce((a, b) => a + b, 0) /
+                  Object.values(report.scores || {}).length;
 
-        {/* Ethics Note */}
-        <p className="text-sm text-gray-500 mt-8">
-          * Feedback is generated using AI to support candidate improvement.
-          Final hiring decisions are made by recruiters.
-        </p>
-      </main>
+                return (
+                  <div
+                    key={index}
+                    className="rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl"
+                  >
+                    <div className="rounded-3xl bg-[#020617] p-6">
+
+                      {/* 🔥 HEADER */}
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h2 className="text-xl font-semibold text-white">
+                            {report.jobTitle}
+                          </h2>
+                          <p className="text-gray-400 text-sm">
+                            {report.candidateName}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-sm text-gray-400">Score</p>
+                          <h1 className="text-3xl font-bold text-blue-400">
+                            {(overallScore * 10).toFixed(0)}%
+                          </h1>
+                        </div>
+                      </div>
+
+                      {/* 🔹 SUMMARY */}
+                      <p className="text-gray-300 mb-6">
+                        {report.summary}
+                      </p>
+
+                      {/* 🔹 GRID */}
+                      <div className="grid md:grid-cols-2 gap-6">
+
+                        {/* STRENGTHS */}
+                        <div className="bg-green-500/10 border border-green-500/20 p-5 rounded-xl">
+                          <h3 className="font-semibold text-green-400 mb-3">
+                            ✅ Strengths
+                          </h3>
+                          <ul className="space-y-2 text-sm text-gray-300">
+                            {(report.strengths?.length
+                              ? report.strengths
+                              : ["No major strengths identified"]).map((s, i) => (
+                              <li key={i}>• {s}</li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* WEAKNESSES */}
+                        <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-xl">
+                          <h3 className="font-semibold text-red-400 mb-3">
+                            ⚠ Weaknesses
+                          </h3>
+                          <ul className="space-y-2 text-sm text-gray-300">
+                            {(report.weaknesses?.length
+                              ? report.weaknesses
+                              : ["No major weaknesses identified"]).map((w, i) => (
+                              <li key={i}>• {w}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* 🔹 DECISION */}
+                      <div className="mt-6 text-center">
+                        <span
+                          className="px-6 py-2 rounded-full font-bold"
+                          style={{
+                            backgroundColor:
+                              report.hire_recommendation === "Hire"
+                                ? "#22c55e"
+                                : "#ef4444",
+                          }}
+                        >
+                          {report.hire_recommendation}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );

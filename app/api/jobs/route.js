@@ -1,15 +1,40 @@
 import { connectDB } from "@/app/lib/mongo";
 import Job from "@/app/models/Job";
-import { NextResponse } from "next/server";
+import User from "@/app/models/User";
 
-export async function GET() {
+export async function GET(req) {
   try {
     await connectDB();
 
-    const jobs = await Job.find().sort({ createdAt: -1 });
+    const { searchParams } = new URL(req.url);
+    const userId = searchParams.get("userId");
 
-    return NextResponse.json(jobs);
+    let jobs = [];
+
+    if (userId) {
+     const user = await User.findOne({ clerkId: userId });
+
+      if (!user || !user.keywords || user.keywords.length === 0) {
+        // fallback → sab jobs dikha de
+        jobs = await Job.find();
+      } else {
+        // 🔥 MATCHING LOGIC
+        const keywords = user.keywords;
+
+        jobs = await Job.find({
+          title: {
+            $regex: keywords.join("|"),
+            $options: "i", // case insensitive
+          },
+        });
+      }
+    } else {
+      jobs = await Job.find();
+    }
+
+    return Response.json(jobs);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 });
+    console.error(error);
+    return Response.json({ error: "Failed to fetch jobs" }, { status: 500 });
   }
 }
