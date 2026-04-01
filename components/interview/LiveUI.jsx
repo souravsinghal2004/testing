@@ -25,10 +25,7 @@ export default function LiveUI({
   const hasGeneratedRef = useRef(false);
 
   // ✅ GENERATE REPORT (ONLY AUTO CASE)
- const handleGenerate = async () => {
-  if (hasGeneratedRef.current) return;
-
-  hasGeneratedRef.current = true;
+const handleGenerate = async () => {
   setGeneratingReport(true);
 
   try {
@@ -38,17 +35,20 @@ export default function LiveUI({
   }
 
   setTimeout(() => {
-    router.push(`/login/dashboard/${jobId}`); // ✅ FINAL FIX
+    router.push(`/login/dashboard/${jobId}`);
   }, 1500);
 };
 
   // ✅ AUTO INTERVIEW END → DIRECT GENERATE
-  useEffect(() => {
-    if (interviewEnded) {
-      setShowEndPopup(true);
-      handleGenerate();
-    }
-  }, [interviewEnded]);
+ useEffect(() => {
+  if (!interviewEnded || hasGeneratedRef.current) return;
+
+  hasGeneratedRef.current = true; // 🔥 lock here
+
+  setShowEndPopup(true);
+  handleGenerate();
+
+}, [interviewEnded]);
 
   // ✅ MANUAL END → COUNTDOWN → REDIRECT ONLY
   useEffect(() => {

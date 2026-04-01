@@ -21,52 +21,50 @@ function InstructionsContent() {
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white max-w-2xl w-full p-8 rounded-lg shadow-sm">
+  <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 flex items-center justify-center px-4 text-white">
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Interview Instructions
-        </h1>
+    <div className="bg-black/40 backdrop-blur-xl border border-white/10 max-w-2xl w-full p-8 rounded-3xl shadow-xl">
 
-        <p className="text-gray-600 mb-6">
-          Please read the instructions carefully before starting the
-          AI-assisted interview.
-        </p>
+      <h1 className="text-3xl font-bold text-blue-300 mb-4">
+        Interview Instructions
+      </h1>
 
-        <ul className="space-y-4 text-gray-700 text-sm">
-          <li>✅ Ensure a stable internet connection.</li>
-          <li>✅ Answer all questions honestly and clearly.</li>
-          <li>✅ You may be asked technical, logical, or role-specific questions.</li>
-          <li>✅ Your responses will be evaluated by AI for early-stage assessment.</li>
-          <li>✅ Final hiring decisions are made by human recruiters.</li>
-          <li>⚠️ Do not refresh or close the tab during the interview.</li>
-        </ul>
+      <p className="text-gray-400 mb-6">
+        Please read carefully before starting the AI interview.
+      </p>
 
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={() => router.back()}
-            className="px-5 py-2 border rounded-md text-gray-700 hover:bg-gray-100"
-          >
-            ← Go Back
-          </button>
+      <ul className="space-y-4 text-sm text-gray-300">
+        <li>✅ Stable internet connection required</li>
+        <li>✅ Answer clearly & honestly</li>
+        <li>✅ Technical + logical questions included</li>
+        <li>✅ AI evaluates your responses</li>
+        <li>⚠️ Do not refresh during interview</li>
+      </ul>
 
-          <button
-            onClick={() =>
-              router.push(`/login/permissions?jobId=${jobId}&title=${encodeURIComponent(title)}`)
-            }
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Start Interview
-          </button>
-        </div>
+      <div className="flex justify-between mt-8">
+        <button
+          onClick={() => router.back()}
+          className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/20"
+        >
+          ← Go Back
+        </button>
 
-        <p className="text-xs text-gray-500 mt-6">
-          * This interview is AI-assisted and intended for preliminary candidate
-          evaluation only.
-        </p>
+        <button
+          onClick={() =>
+            router.push(`/login/permissions?jobId=${jobId}&title=${encodeURIComponent(title)}`)
+          }
+          className="px-6 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 shadow-lg"
+        >
+          Start Interview
+        </button>
       </div>
+
+      <p className="text-xs text-gray-500 mt-6">
+        AI-assisted evaluation only. Final decision by recruiters.
+      </p>
     </div>
-  );
+  </div>
+);
 }
 
 export default function InterviewInstructionsPage() {

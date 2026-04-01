@@ -37,71 +37,73 @@ export default function UserDashboardPage() {
   }, [isLoaded, isSignedIn, router]);
 
   /* SAVE USER */
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn || !user) return;
+useEffect(() => {
+  if (!isLoaded || !isSignedIn || !user) return;
 
-    fetch("/api/save-user", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        clerkId: user.id,
-        name: `${user.firstName || ""} ${user.lastName || ""}`,
-        email: user.primaryEmailAddress?.emailAddress,
-        role: "CANDIDATE",
-      }),
-    });
-  }, [isLoaded, isSignedIn, user]);
+  setLoading(true); // 👈 add this
+
+  async function fetchJobs() {
+    try {
+      const res = await fetch(`/api/jobs?userId=${user.id}`);
+      const data = await res.json();
+      setJobs(data);
+    } catch (error) {
+      console.error("Failed to fetch jobs", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchJobs();
+}, [isLoaded, isSignedIn, user]);
 
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50  bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100   ">
-      <Header />
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+  <Header />
 
-      <div className="flex">
+  <div className="flex h-[calc(100vh-64px)]"> 
         {/* Sidebar */}
-        <aside className="w-64 bg-white border-r px-6 py-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100   ">
-          <h2 className="text-xl font-bold text-blue-600 mb-8">
+          <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+          <h2 className="text-xl font-bold text-blue-400 mb-8">
             Candidate Panel
           </h2>
 
-          <nav className="space-y-4 text-gray-700">
+          <nav className="space-y-4">
             <button
               onClick={() => router.push("/login")}
-              className="block w-full text-left font-semibold text-blue-600"
+         
+              className="block w-full text-left font-semibold text-blue-400"
             >
               💼 Available Jobs
             </button>
 
             <button
               onClick={() => router.push("/login/results")}
-              className="block w-full text-left hover:text-blue-600"
+              className="block w-full text-left hover:text-blue-400"
             >
               📊 Interview Results
             </button>
 
-            <button
-              onClick={() => router.push("/login/feedback")}
-              className="block w-full text-left hover:text-blue-600"
-            >
+            <button      className="block w-full text-left hover:text-blue-400">
               🧠 Skill Feedback
             </button>
 
             <button
               onClick={() => router.push("/login/profile")}
-              className="block w-full text-left hover:text-blue-600"
+              className="block w-full text-left hover:text-blue-400"
             >
-              📄 Profile & Resume
+              📄 Profile
             </button>
           </nav>
         </aside>
 
         {/* Main Content */}
         
-        <main className="flex-1 p-10">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            <main className="flex-1 p-10 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500">
+
+          <h1 className="text-3xl font-bold mb-6 text-blue-300">
             Welcome, {user?.firstName || "Candidate"}
           </h1>
 
@@ -110,66 +112,93 @@ export default function UserDashboardPage() {
           </p>
 
           {/* Jobs Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {loading ? (
-              <p>Loading jobs...</p>
-            ) : jobs.length === 0 ? (
-              <p>No jobs available.</p>
-            ) : (
-              jobs.map((job) => (
-                <div
-                  key={job._id}
-                  className="bg-white p-6 rounded-2xl shadow-sm border hover:shadow-md transition"
-                >
-                  <h3 className="text-xl font-semibold mb-1">
-                    {job.title}
-                  </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+  {loading ? (
+    <p className="text-white">Loading jobs...</p>
+  ) : jobs.length === 0 ? (
+    <p className="text-white">No jobs available.</p>
+  ) : (
+    jobs.map((job) => (
+      <div
+        key={job._id}
+        className="rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl"
+      >
+        <div className="rounded-3xl bg-[#020617] p-6 text-white">
 
-                  <div className="flex items-center gap-3 mb-3">
-                    <p className="text-gray-600">{job.company}</p>
-                    <span className="text-blue-600 text-sm border border-blue-600 px-3 py-1 rounded-full">
-                      Actively hiring
-                    </span>
-                  </div>
+          {/* 🔥 HEADER */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-semibold">
+                {job.title}
+              </h2>
+              <p className="text-gray-400 text-sm">
+                {job.company}
+              </p>
+            </div>
 
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                    <span>
-                      🏠 {job.workMode || "Work from home"}
-                    </span>
+            <span className="text-xs bg-green-500/20 text-green-400 px-3 py-1 rounded-full">
+              Actively Hiring
+            </span>
+          </div>
 
-                    {job.stipend && (
-                      <span>
-                        💰 ₹{job.stipend?.min} - ₹{job.stipend?.max}/month
-                      </span>
-                    )}
+          {/* 🔹 SUMMARY */}
+          {job.about && (
+            <p className="text-gray-300 mb-4 line-clamp-3">
+              {job.about}
+            </p>
+          )}
 
-                    {job.duration && (
-                      <span>⏳ {job.duration}</span>
-                    )}
-                  </div>
+          {/* 🔹 GRID INFO */}
+          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+            <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl">
+              🏠 {job.workMode || "Work from home"}
+            </div>
 
-                  {job.about && (
-                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                      {job.about}
-                    </p>
-                  )}
+            {job.duration && (
+              <div className="bg-purple-500/10 border border-purple-500/20 p-3 rounded-xl">
+                ⏳ {job.duration}
+              </div>
+            )}
 
-                  {job.skills?.length > 0 && (
-                    <div className="text-sm text-gray-600 mb-4">
-                      {job.skills.join(" • ")}
-                    </div>
-                  )}
-
-                  <Link
-                    href={`/login/jobs/${job._id}`}
-                    className="inline-block mt-2 bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                  >
-                    View Job
-                  </Link>
-                </div>
-              ))
+            {job.stipend && (
+              <div className="bg-green-500/10 border border-green-500/20 p-3 rounded-xl col-span-2">
+                💰 ₹{job.stipend?.min} - ₹{job.stipend?.max}/month
+              </div>
             )}
           </div>
+
+          {/* 🔹 SKILLS */}
+          {job.skills?.length > 0 && (
+            <div className="mb-5 flex flex-wrap gap-2">
+              {job.skills.map((skill, i) => (
+                <span
+                  key={i}
+                  className="text-xs bg-white/10 px-3 py-1 rounded-full border border-white/10"
+                >
+                  {skill}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* 🔹 FOOTER */}
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-400">
+              AI Matched Job
+            </span>
+
+            <Link
+              href={`/login/jobs/${job._id}`}
+              className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              View Job
+            </Link>
+          </div>
+        </div>
+      </div>
+    ))
+  )}
+</div>
         </main>
       </div>
     </div>

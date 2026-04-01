@@ -21,66 +21,78 @@ export default async function JobDetailsPage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-6">
-      <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm p-8">
+  <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white py-12 px-6">
 
+    <div className="max-w-3xl mx-auto rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl">
+
+      <div className="bg-[#020617] rounded-3xl p-8">
+
+        {/* 🔙 BACK */}
         <Link
           href="/login"
-          className="text-sm text-blue-600 hover:underline mb-4 inline-block"
+          className="text-sm text-blue-400 hover:text-blue-300 mb-4 inline-block"
         >
           ← Back to Jobs
         </Link>
 
-        {/* Title */}
-        <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
-        <p className="text-gray-600 mb-4">{job.company}</p>
+        {/* 🔥 TITLE */}
+        <h1 className="text-3xl font-bold mb-2 text-white">
+          {job.title}
+        </h1>
+        <p className="text-gray-400 mb-6">{job.company}</p>
 
-        {/* Basic Info */}
-        <div className="grid grid-cols-2 gap-4 mb-6 text-gray-700">
-          <p><strong>Location:</strong> {job.location}</p>
-          <p><strong>Type:</strong> {job.jobType}</p>
-          <p><strong>Start:</strong> {job.startDate}</p>
-          <p><strong>Duration:</strong> {job.duration}</p>
+        {/* 🔹 BASIC INFO */}
+        <div className="grid grid-cols-2 gap-4 mb-6 text-gray-300 text-sm">
+          <p><span className="text-gray-500">Location:</span> {job.location}</p>
+          <p><span className="text-gray-500">Type:</span> {job.jobType}</p>
+          <p><span className="text-gray-500">Start:</span> {job.startDate}</p>
+          <p><span className="text-gray-500">Duration:</span> {job.duration}</p>
         </div>
 
-        {/* Stipend */}
+        {/* 💰 STIPEND */}
         {job.stipend && (
-          <p className="mb-2">
-            <strong>Stipend:</strong>{" "}
+          <div className="mb-3 text-gray-300">
+            <span className="text-gray-500">Stipend:</span>{" "}
             ₹{job.stipend?.min} - ₹{job.stipend?.max} / month
-          </p>
+          </div>
         )}
 
-        {/* Apply By */}
+        {/* 📅 APPLY BY */}
         {job.applyBy && (
-          <p className="mb-4">
-            <strong>Apply By:</strong>{" "}
+          <div className="mb-4 text-gray-300">
+            <span className="text-gray-500">Apply By:</span>{" "}
             {new Date(job.applyBy).toLocaleDateString()}
-          </p>
+          </div>
         )}
 
-        {/* Applicants */}
+        {/* 👥 APPLICANTS */}
         {job.applicants !== undefined && (
-          <p className="mb-6 text-gray-500">
+          <p className="mb-6 text-gray-500 text-sm">
             {job.applicants}+ applicants
           </p>
         )}
 
-        <hr className="my-6" />
+        <div className="border-t border-white/10 my-6" />
 
-        {/* About */}
+        {/* 📘 ABOUT */}
         {job.about && (
           <div className="mb-6">
-            <h2 className="font-semibold text-lg mb-2">About the Role</h2>
-            <p>{job.about}</p>
+            <h2 className="font-semibold text-lg mb-2 text-blue-300">
+              About the Role
+            </h2>
+            <p className="text-gray-300 leading-relaxed">
+              {job.about}
+            </p>
           </div>
         )}
 
-        {/* Responsibilities */}
+        {/* 📌 RESPONSIBILITIES */}
         {job.responsibilities?.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-semibold text-lg mb-2">Responsibilities</h2>
-            <ul className="list-disc ml-6 space-y-1">
+            <h2 className="font-semibold text-lg mb-2 text-blue-300">
+              Responsibilities
+            </h2>
+            <ul className="list-disc ml-6 space-y-2 text-gray-300">
               {job.responsibilities.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
@@ -88,11 +100,13 @@ export default async function JobDetailsPage({ params }) {
           </div>
         )}
 
-        {/* Requirements */}
+        {/* 📌 REQUIREMENTS */}
         {job.requirements?.length > 0 && (
           <div className="mb-6">
-            <h2 className="font-semibold text-lg mb-2">Requirements</h2>
-            <ul className="list-disc ml-6 space-y-1">
+            <h2 className="font-semibold text-lg mb-2 text-blue-300">
+              Requirements
+            </h2>
+            <ul className="list-disc ml-6 space-y-2 text-gray-300">
               {job.requirements.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
@@ -100,15 +114,18 @@ export default async function JobDetailsPage({ params }) {
           </div>
         )}
 
-        {/* Skills */}
+        {/* 🧠 SKILLS */}
         {job.skills?.length > 0 && (
           <div className="mb-8">
-            <h2 className="font-semibold text-lg mb-2">Skills Required</h2>
+            <h2 className="font-semibold text-lg mb-3 text-blue-300">
+              Skills Required
+            </h2>
+
             <div className="flex flex-wrap gap-2">
               {job.skills.map((skill, index) => (
                 <span
                   key={index}
-                  className="bg-gray-200 px-3 py-1 rounded-full text-sm"
+                  className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-xs border border-blue-500/20"
                 >
                   {skill}
                 </span>
@@ -117,11 +134,13 @@ export default async function JobDetailsPage({ params }) {
           </div>
         )}
 
-        {/* Interview Button */}
-        {/* Interview Button */}
-<InterviewButton job={job} />
+        {/* 🚀 BUTTON */}
+        <div className="mt-8">
+          <InterviewButton job={job} />
+        </div>
 
       </div>
     </div>
-  );
+  </div>
+);
 }

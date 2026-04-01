@@ -93,56 +93,75 @@ export default function InterviewSetup() {
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white max-w-3xl w-full p-8 rounded-lg shadow-sm">
+  <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 flex items-center justify-center px-4 text-white">
 
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
+    <div className="w-full max-w-4xl rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl">
+
+      <div className="bg-[#020617] rounded-3xl p-8">
+
+        {/* 🔥 TITLE */}
+        <h1 className="text-3xl font-bold text-blue-300 mb-4">
           Interview Setup
         </h1>
 
-        <p className="text-gray-600 mb-6">
-          Please enable your camera and microphone before starting the interview.
+        <p className="text-gray-400 mb-6">
+          Enable camera & microphone before starting your interview.
         </p>
 
+        {/* 🔹 GRID */}
         <div className="flex flex-col md:flex-row gap-6">
 
+          {/* 🎥 CAMERA */}
           <div className="flex-1">
-            <p className="text-sm font-medium mb-2">🎥 Camera Preview</p>
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="w-full h-64 bg-black rounded-md object-cover"
-              style={{ transform: "scaleX(-1)" }}
-            />
+            <p className="text-sm font-medium mb-2 text-gray-300">
+              🎥 Camera Preview
+            </p>
+
+            <div className="rounded-xl overflow-hidden border border-white/10 bg-black">
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-64 object-cover"
+                style={{ transform: "scaleX(-1)" }}
+              />
+            </div>
           </div>
 
+          {/* 🎤 AUDIO */}
           <div className="flex-1">
-            <p className="text-sm font-medium mb-2">🎤 Microphone Test</p>
+            <p className="text-sm font-medium mb-2 text-gray-300">
+              🎤 Microphone Test
+            </p>
+
             <div
               ref={audioBoxRef}
-              className={`h-64 rounded-md flex items-center justify-center text-gray-600 border-2 transition-all ${
+              className={`h-64 rounded-xl flex items-center justify-center text-sm transition-all border ${
                 isSpeaking
-                  ? "border-green-500 bg-green-50"
-                  : "border-gray-300"
+                  ? "border-green-500 bg-green-500/10 text-green-400"
+                  : "border-white/10 bg-white/5 text-gray-400"
               }`}
             >
-              {isSpeaking ? "Audio Detected ✔" : "Speak to test microphone"}
+              {isSpeaking
+                ? "Audio Detected ✔"
+                : "Speak to test microphone"}
             </div>
           </div>
 
         </div>
 
+        {/* ❌ ERROR */}
         {error && (
-          <p className="text-red-600 text-sm mt-4">{error}</p>
+          <p className="text-red-400 text-sm mt-4">{error}</p>
         )}
 
+        {/* 🔹 BUTTONS */}
         <div className="flex justify-between mt-8">
 
           <button
             onClick={handleGoBack}
-            className="px-5 py-2 border rounded-md text-gray-700 hover:bg-gray-100"
+            className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition"
           >
             ← Go Back
           </button>
@@ -155,22 +174,24 @@ export default function InterviewSetup() {
                 `/login/live?jobId=${jobId}&title=${encodeURIComponent(title)}&name=${candidateName}`
               );
             }}
-            className={`px-6 py-2 rounded-md text-white ${
+            className={`px-6 py-2 rounded-lg font-semibold transition ${
               mediaAllowed
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-400 cursor-not-allowed"
+                ? "bg-blue-600 hover:bg-blue-500 shadow-lg"
+                : "bg-gray-500 cursor-not-allowed"
             }`}
           >
-            Proceed to Interview
+            Proceed to Interview →
           </button>
 
         </div>
 
+        {/* 🔹 FOOTNOTE */}
         <p className="text-xs text-gray-500 mt-6">
-          * Audio & video are used only during the interview session.
+          * Camera & microphone are used only during the interview session.
         </p>
 
       </div>
     </div>
-  );
+  </div>
+);
 }

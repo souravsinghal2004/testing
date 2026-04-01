@@ -59,11 +59,13 @@ Rules:
     }
 
     // 💾 Save to DB
-    if (userId) {
-      await User.findByIdAndUpdate(userId, {
-        keywords: keywords,
-      });
-    }
+// 💾 Save to DB
+if (userId) {
+  await User.findOneAndUpdate(
+    { clerkId: userId },
+    { keywords: keywords }
+  );
+}
 
     return NextResponse.json({
       success: true,

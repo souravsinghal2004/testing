@@ -44,77 +44,77 @@ export default function InterviewResultsPage() {
 
   if (!isLoaded || !isSignedIn) return null;
 
-  return (
-    <div className="min-h-screen bg-gray-50 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100   ">
-      <Header />
+ return (
+  <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+    <Header />
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r px-6 py-8 bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100   ">
-          <h2 className="text-xl font-bold text-blue-600 mb-8">
-            Candidate Panel
-          </h2>
+    <div className="flex">
+      {/* 🔹 SIDEBAR */}
+      <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+        <h2 className="text-xl font-bold text-blue-400 mb-8">
+          Candidate Panel
+        </h2>
 
-          <nav className="space-y-4 text-gray-700">
-            <button
-              onClick={() => router.push("/login")}
-              className="block w-full text-left hover:text-blue-600"
-            >
-              💼 Available Jobs
-            </button>
+        <nav className="space-y-4">
+          <button
+            onClick={() => router.push("/login")}
+            className="block w-full text-left hover:text-blue-400"
+          >
+            💼 Available Jobs
+          </button>
 
-            <button className="block w-full text-left font-semibold text-blue-600">
-              📊 Interview Results
-            </button>
+          <button className="block w-full text-left font-semibold text-blue-400">
+            📊 Interview Results
+          </button>
 
-            <button
-              onClick={() => router.push("/login/feedback")}
-              className="block w-full text-left hover:text-blue-600"
-            >
-              🧠 Skill Feedback
-            </button>
+          <button
+            onClick={() => router.push("/login/feedback")}
+            className="block w-full text-left hover:text-blue-400"
+          >
+            🧠 Skill Feedback
+          </button>
 
-            <button
-              onClick={() => router.push("/login/profile")}
-              className="block w-full text-left hover:text-blue-600"
-            >
-              📄 Profile & Resume
-            </button>
-          </nav>
-        </aside>
+          <button
+            onClick={() => router.push("/login/profile")}
+            className="block w-full text-left hover:text-blue-400"
+          >
+            📄 Profile
+          </button>
+        </nav>
+      </aside>
 
-        {/* Main */}
-        <main className="flex-1 p-10">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Interview Results
-          </h1>
+      {/* 🔹 MAIN */}
+      <main className="flex-1 p-10">
+        <h1 className="text-3xl font-bold text-blue-300 mb-2">
+          Interview Results
+        </h1>
 
-          <p className="text-gray-600 mb-8">
-            View AI-generated scores and recruiter shortlisting status.
-          </p>
+        <p className="text-gray-400 mb-8">
+          View AI-generated scores and recruiter shortlisting status.
+        </p>
 
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        {/* 🔥 TABLE CONTAINER */}
+        <div className="rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl">
+          <div className="rounded-3xl bg-[#020617] p-6 overflow-x-auto">
+
             {loading ? (
-              <div className="p-6">Loading reports...</div>
+              <div>Loading reports...</div>
             ) : interviews.length === 0 ? (
-              <div className="p-6 text-gray-500">
-                No reports found.
-              </div>
+              <div className="text-gray-400">No reports found.</div>
             ) : (
-              <table className="w-full text-left">
-                <thead className="bg-gray-100 text-gray-700">
-                  <tr>
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="text-gray-400 border-b border-white/10">
                     <th className="p-4">Job Role</th>
-                    <th className="p-4">Interview Date</th>
-                    <th className="p-4">AI Score</th>
+                    <th className="p-4">Date</th>
+                    <th className="p-4">Score</th>
                     <th className="p-4">Status</th>
-                    <th className="p-4">Details</th>
+                    <th className="p-4">Action</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {interviews.map((item) => {
-                    // 🔥 calculate score
                     const avgScore =
                       item?.scores
                         ? Math.round(
@@ -128,42 +128,47 @@ export default function InterviewResultsPage() {
                         : 0;
 
                     return (
-                      <tr key={item._id} className="border-t">
-                        {/* ✅ jobTitle */}
-                        <td className="p-4">{item.jobTitle}</td>
+                      <tr
+                        key={item._id}
+                        className="border-b border-white/5 hover:bg-white/5 transition"
+                      >
+                        <td className="p-4 font-medium text-white">
+                          {item.jobTitle}
+                        </td>
 
-                        {/* ✅ createdAt */}
-                        <td className="p-4">
+                        <td className="p-4 text-gray-400">
                           {new Date(item.createdAt).toLocaleDateString()}
                         </td>
 
-                        {/* ✅ AI Score */}
-                        <td className="p-4 font-semibold">
-                          {avgScore}%
+                        {/* 🔥 SCORE BADGE */}
+                        <td className="p-4">
+                          <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 font-semibold">
+                            {avgScore}%
+                          </span>
                         </td>
 
-                        {/* ✅ Status from hire_recommendation */}
-                        <td
-                          className={`p-4 font-medium ${
-                            item.hire_recommendation === "Hire"
-                              ? "text-green-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {item.hire_recommendation}
+                        {/* 🔥 STATUS BADGE */}
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              item.hire_recommendation === "Hire"
+                                ? "bg-green-500/20 text-green-400"
+                                : "bg-red-500/20 text-red-400"
+                            }`}
+                          >
+                            {item.hire_recommendation}
+                          </span>
                         </td>
 
-                        {/* ✅ REDIRECT TO DASHBOARD */}
+                        {/* 🔥 BUTTON */}
                         <td className="p-4">
                           <button
                             onClick={() =>
-                              router.push(
-                                `/login/dashboard/${item.jobId}`
-                              )
+                              router.push(`/login/dashboard/${item.jobId}`)
                             }
-                            className="text-blue-600 text-sm hover:underline"
+                            className="text-blue-400 hover:text-blue-300 font-medium"
                           >
-                            View Details
+                            View →
                           </button>
                         </td>
                       </tr>
@@ -173,12 +178,13 @@ export default function InterviewResultsPage() {
               </table>
             )}
           </div>
+        </div>
 
-          <p className="text-sm text-gray-500 mt-6">
-            * AI scores assist in evaluation. Final decision is by recruiters.
-          </p>
-        </main>
-      </div>
+        <p className="text-sm text-gray-500 mt-6">
+          * AI scores assist in evaluation. Final decision is by recruiters.
+        </p>
+      </main>
     </div>
-  );
+  </div>
+);
 }

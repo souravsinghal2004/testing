@@ -67,15 +67,22 @@ ${JSON.stringify(qa)}
     }
 
     // ✅ SAVE TO DB
-  const savedReport = await Report.create({
-  candidateName,
-  jobTitle,
-  userId,   // ✅ ADD
-  jobId,    // ✅ ADD
-  qa,
-  ...data,
-});
-
+ // ✅ SAVE OR UPDATE (UPSERT)
+const savedReport = await Report.findOneAndUpdate(
+  { userId, jobId }, // 🔍 condition to find existing report
+  {
+    candidateName,
+    jobTitle,
+    userId,
+    jobId,
+    qa,
+    ...data,
+  },
+  {
+    new: true,      // return updated document
+    upsert: true,   // create if not exists
+  }
+);
 
 
 console.log("✅ SAVED REPORT:", savedReport);
