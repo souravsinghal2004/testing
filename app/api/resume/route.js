@@ -7,11 +7,20 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const { resumeText, userId } = await req.json();
+    const body = await req.json();
+    console.log("📩 REQUEST BODY:", body);
+
+    const { resumeText, userId } = body;
 
     if (!resumeText) {
-      return NextResponse.json({ error: "No resume text provided" }, { status: 400 });
+      console.log("❌ No resume text");
+      return NextResponse.json(
+        { error: "No resume text provided" },
+        { status: 400 }
+      );
     }
+
+    console.log("👤 USER ID:", userId);
 
     // 🧠 AI CALL
     const completion = await openrouter.chat.completions.create({
@@ -20,21 +29,12 @@ export async function POST(req) {
         {
           role: "system",
           content: `
-You are an AI resume analyzer.
+Extract ONLY job-related keywords.
 
-Extract ONLY job-related keywords based on the candidate's skills and experience.
-
-Return STRICT JSON in this format:
+Return STRICT JSON:
 {
-  "keywords": ["frontend developer", "backend developer", "full stack developer"]
+  "keywords": ["frontend developer", "backend developer"]
 }
-
-Rules:
-- Only return array of job roles or domains
-- No explanation
-- No extra text
-- Max 10 keywords
-- Keep them industry relevant
           `,
         },
         {
@@ -47,25 +47,42 @@ Rules:
 
     let aiResponse = completion.choices[0].message.content;
 
-    // 🔥 Parse JSON safely
+    console.log("🤖 RAW AI RESPONSE:", aiResponse);
+
+    // 🔥 SAFE PARSE
     let keywords = [];
 
     try {
-      const parsed = JSON.parse(aiResponse);
+      const cleaned = aiResponse
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      console.log("🧹 CLEANED RESPONSE:", cleaned);
+
+      const parsed = JSON.parse(cleaned);
       keywords = parsed.keywords || [];
+
     } catch (err) {
-      console.log("AI JSON parse error:", err);
-      return NextResponse.json({ error: "AI response invalid" }, { status: 500 });
+      console.log("❌ JSON PARSE ERROR:", err);
+      return NextResponse.json(
+        { error: "AI response invalid" },
+        { status: 500 }
+      );
     }
 
-    // 💾 Save to DB
-// 💾 Save to DB
-if (userId) {
-  await User.findOneAndUpdate(
-    { clerkId: userId },
-    { keywords: keywords }
-  );
-}
+    console.log("✅ FINAL KEYWORDS:", keywords);
+
+    // 💾 SAVE TO DB
+    if (userId) {
+      const updated = await User.findOneAndUpdate(
+        { clerkId: userId },
+        { $set: { keywords: keywords } },
+        { new: true, upsert: true }
+      );
+
+      console.log("💾 SAVED IN DB:", updated?.keywords);
+    }
 
     return NextResponse.json({
       success: true,
@@ -73,7 +90,10 @@ if (userId) {
     });
 
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    console.error("❌ SERVER ERROR:", error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }

@@ -8,32 +8,43 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
+
     let jobs = [];
 
     if (userId) {
-     const user = await User.findOne({ clerkId: userId });
+      const user = await User.findOne({ clerkId: userId });
 
+      console.log("👤 USER:", user);
+      console.log("🔑 KEYWORDS:", user?.keywords);
+
+      // ❌ NO FALLBACK NOW
       if (!user || !user.keywords || user.keywords.length === 0) {
-        // fallback → sab jobs dikha de
-        jobs = await Job.find();
-      } else {
-        // 🔥 MATCHING LOGIC
-        const keywords = user.keywords;
-
-        jobs = await Job.find({
-          title: {
-            $regex: keywords.join("|"),
-            $options: "i", // case insensitive
-          },
-        });
+        return Response.json([]); // 🔥 EMPTY ARRAY
       }
+
+      const keywords = user.keywords;
+
+      // 🔥 BETTER REGEX SAFE
+      const regex = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+
+      jobs = await Job.find({
+        title: {
+          $regex: regex,
+          $options: "i",
+        },
+      });
     } else {
-      jobs = await Job.find();
+      // ❌ optional: agar userId nahi toh bhi empty return kar
+      return Response.json([]);
     }
 
     return Response.json(jobs);
+
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to fetch jobs" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to fetch jobs" },
+      { status: 500 }
+    );
   }
 }

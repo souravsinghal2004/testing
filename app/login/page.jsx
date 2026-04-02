@@ -13,34 +13,8 @@ export default function UserDashboardPage() {
   const router = useRouter();
 
   /* FETCH JOBS */
-  useEffect(() => {
-    async function fetchJobs() {
-      try {
-        const res = await fetch(`/api/jobs?userId=${user.id}`);
-        const data = await res.json();
-        setJobs(data);
-      } catch (error) {
-        console.error("Failed to fetch jobs", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchJobs();
-  }, []);
-
-  /* AUTH GUARD */
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.replace("/");
-    }
-  }, [isLoaded, isSignedIn, router]);
-
-  /* SAVE USER */
 useEffect(() => {
   if (!isLoaded || !isSignedIn || !user) return;
-
-  setLoading(true); // 👈 add this
 
   async function fetchJobs() {
     try {
@@ -55,6 +29,57 @@ useEffect(() => {
   }
 
   fetchJobs();
+}, [isLoaded, isSignedIn, user]);
+
+  /* AUTH GUARD */
+useEffect(() => {
+  if (!isLoaded || !isSignedIn || !user) return;
+
+  async function fetchJobs() {
+    // 🔥 first get user
+    const userRes = await fetch(`/api/user?clerkId=${user.id}`);
+    const userData = await userRes.json();
+
+    // ⛔ wait until keywords exist
+    if (!userData?.keywords || userData.keywords.length === 0) {
+      console.log("Waiting for keywords...");
+      return;
+    }
+
+    // ✅ now fetch jobs
+    const res = await fetch(`/api/jobs?userId=${user.id}`);
+    const data = await res.json();
+    setJobs(data);
+    setLoading(false);
+  }
+
+  fetchJobs();
+}, [isLoaded, isSignedIn, user]);
+
+  /* SAVE USER */
+ useEffect(() => {
+  if (!isLoaded || !isSignedIn || !user) return;
+
+  async function saveUser() {
+    try {
+      await fetch("/api/save-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clerkId: user.id,
+          name: `${user.firstName || ""} ${user.lastName || ""}`,
+          email: user.primaryEmailAddress?.emailAddress,
+          role: "CANDIDATE",
+        }),
+      });
+    } catch (err) {
+      console.error("User save failed", err);
+    }
+  }
+
+  saveUser();
 }, [isLoaded, isSignedIn, user]);
 
   if (!isLoaded || !isSignedIn) return null;

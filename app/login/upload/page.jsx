@@ -36,56 +36,65 @@ export default function UploadPage() {
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      alert("Pehle PDF upload kar bhai");
-      return;
-    }
+  if (!file) {
+    alert("Pehle PDF upload kar bhai");
+    return;
+  }
 
-    if (!user) {
-      alert("Login kar pehle");
-      return;
-    }
+  if (!user) {
+    alert("Login kar pehle");
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
+
+  try {
+    let extractedText = "";
 
     try {
-      // ❌ Extraction error handling
-      let extractedText = "";
-      try {
-        extractedText = await pdfToText(file);
-      } catch (err) {
-        alert("PDF read karne mein error aaya");
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch("/api/resume", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          resumeText: extractedText,
-          userId: user.id,
-        }),
-      });
-
-      const data = await res.json();
-
-      // ❌ API error handling
-      if (!res.ok || !data.success) {
-        throw new Error(data?.message || "AI processing failed");
-      }
-
-      router.push("/login");
-
+      extractedText = await pdfToText(file);
+      console.log("📄 Extracted Text:", extractedText.slice(0, 200));
     } catch (err) {
-      console.error("ERROR:", err);
-      alert(err.message || "Something went wrong");
+      alert("PDF read karne mein error aaya");
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
-  };
+    console.log("🚀 Sending to API...");
+
+    const res = await fetch("/api/resume", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        resumeText: extractedText,
+        userId: user.id,
+      }),
+    });
+
+    const data = await res.json();
+
+    console.log("📦 API RESPONSE:", data);
+
+    // 🔥 IMPORTANT CHECK
+    if (!res.ok || !data.success || !data.keywords?.length) {
+      throw new Error("Keywords not saved properly");
+    }
+
+    console.log("✅ FINAL KEYWORDS:", data.keywords);
+
+    // 🔥 redirect AFTER everything confirmed
+    router.push("/login");
+    router.refresh();
+
+  } catch (err) {
+    console.error("❌ ERROR:", err);
+    alert(err.message || "Something went wrong");
+  }
+
+  setLoading(false);
+};
 
   if (!isLoaded) return null;
 

@@ -23,7 +23,7 @@ export default function Hero() {
           <div className="flex items-center gap-6 mt-8">
 
             <button className=" text-white px-6 py-3 rounded-full font-medium ">
-           <Link href="/sign-in" className="group flex items-center gap-4">
+           <Link href="/auth-redirect" className="group flex items-center gap-4">
   {/* The Icon Container */}
   <div className="relative flex items-center justify-center">
     {/* The Outer Offset Circle (Thin Red Line) */}
