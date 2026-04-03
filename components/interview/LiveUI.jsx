@@ -102,7 +102,16 @@ const handleGenerate = async () => {
                     : "bg-green-100 text-green-900 self-end"
                 }`}
               >
-                {m.sender === "ai" ? "🤖 " : "🧑 "} {m.text}
+                {m.sender === "ai" ? "🤖 " : "🧑 "}
+{m.text === "__THINKING__" ? (
+  <span className="inline-flex gap-1 ml-1">
+    <span className="w-1 h-1 bg-blue-700 rounded-full animate-bounce"></span>
+    <span className="w-1 h-1 bg-blue-700 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+    <span className="w-1 h-1 bg-blue-700 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+  </span>
+) : (
+  m.text
+)}
               </div>
             ))}
           </div>

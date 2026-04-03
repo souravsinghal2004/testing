@@ -3,44 +3,43 @@
 import React from "react";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import Image from "next/image";
 export function Header() {
   return (
-    <header className="w-full flex items-center justify-between px-10 py-6  bg-gradient-to-br from-black via-[#0f172a] to-blue-900  text-white">
+  
+    <header className="relative w-full flex items-center justify-between px-10 h-20 bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
 
-      {/* Logo */}
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 bg-red-500 rounded-md"></div>
-        <h1 className="text-xl font-semibold">INTERVIEW</h1>
+      {/* 🔥 FLOATING LOGO */}
+      <div className="absolute left-10 top-1/2 -translate-y-1/2 object-contain mix-blend-lighten">
+        <img
+          src="/hirebyte-logo.png"
+          alt="HireByte Logo"
+          className="h-14 w-auto object-contain mix-blend-lighten"
+        />
       </div>
 
-      {/* Links */}
-      <nav className="hidden md:flex items-center gap-8 text-white">
-        <a href="#">Solutions</a>
-        <a href="#">Enterprise</a>
-        <a href="#">Resources</a>
-        <a href="#">Pricing</a>
+      {/* 🔥 NAV LINKS (center shift due to absolute logo) */}
+      <nav className="hidden md:flex items-center gap-8 text-white mx-auto">
+        <Link href="/">Home</Link>
+        <Link href="/header/about">About</Link>
+        <Link href="/header/how-it-works">How It Works</Link>
+        <Link href="/header/contact">Contact</Link>
+        <Link href="/header/pricing">Pricing</Link>
       </nav>
 
-      {/* Auth Buttons */}
+      {/* 🔥 AUTH */}
       <div className="flex items-center gap-4">
+        <SignedOut>
+          <Link href="/sign-in" className="text-white hover:text-gray-300 font-medium">
+            Sign In
+          </Link>
+        </SignedOut>
 
-        {/* USER NOT SIGNED IN */}
-       <SignedOut>
-  <Link
-    href="/sign-in"
-    className="text-white hover:text-gray-300 font-medium"
-  >
-    Sign In
-  </Link>
-</SignedOut>
-
-        {/* USER SIGNED IN */}
         <SignedIn>
           <UserButton afterSignOutUrl="/" />
         </SignedIn>
-
       </div>
-
     </header>
   );
 }
+ 

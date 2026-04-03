@@ -43,7 +43,19 @@ const JobSchema = new mongoose.Schema(
 
     skills: [String],
 
-    createdBy: String
+    createdBy: String,
+
+    // ✅ NEW FIELDS
+    no_of_questions: {
+      type: Number,
+      default: 1
+    },
+
+    questions: {
+      type: [String], // array of questions
+      default: []
+    }
+
   },
   { timestamps: true }
 );

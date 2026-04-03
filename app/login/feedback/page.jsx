@@ -40,10 +40,10 @@ export default function FeedbackPage() {
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
-      <Header />
-
-      <div className="flex">
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+     <Header />
+   
+     <div className="flex h-[calc(100vh-64px)]"> 
         {/* 🔹 SIDEBAR */}
         <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
           <h2 className="text-xl font-bold text-blue-400 mb-8">
@@ -79,7 +79,7 @@ export default function FeedbackPage() {
         </aside>
 
         {/* 🔹 MAIN */}
-        <main className="flex-1 p-10">
+        <main className="flex-1 p-10 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500">
           <h1 className="text-3xl font-bold mb-6 text-blue-300">
             AI Skill Feedback
           </h1>
