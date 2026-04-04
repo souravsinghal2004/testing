@@ -7,10 +7,36 @@ import Link from "next/link";
 import { Header } from "@/components/Navbar";
 
 export default function UserDashboardPage() {
+
+
+  console.log("🚨 LOGIN PAGE HIT"); 
   const { isLoaded, isSignedIn, user } = useUser();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+
+
+  useEffect(() => {
+  if (!isLoaded || !isSignedIn || !user) return;
+
+  async function checkRole() {
+    try {
+      const res = await fetch(`/api/user?clerkId=${user.id}`);
+      const userData = await res.json();
+
+      if (userData?.role === "RECRUITER") {
+        router.push("/recruiter");
+      }
+    } catch (err) {
+      console.error("Role check failed", err);
+    }
+  }
+
+  checkRole();
+}, [isLoaded, isSignedIn, user]);
+
+
 
   /* FETCH JOBS */
 useEffect(() => {
@@ -71,7 +97,7 @@ useEffect(() => {
           clerkId: user.id,
           name: `${user.firstName || ""} ${user.lastName || ""}`,
           email: user.primaryEmailAddress?.emailAddress,
-          role: "CANDIDATE",
+          
         }),
       });
     } catch (err) {
@@ -97,7 +123,7 @@ useEffect(() => {
 
           <nav className="space-y-4">
             <button
-              onClick={() => router.push("/login")}
+            
          
               className="block w-full text-left font-semibold text-blue-400"
             >

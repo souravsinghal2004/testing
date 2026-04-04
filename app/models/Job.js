@@ -2,20 +2,26 @@ import mongoose from "mongoose";
 
 const JobSchema = new mongoose.Schema(
   {
-    jobId: { type: String, required: true, unique: true },
+    jobId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
 
-    title: String,
-    company: String,
+    title: { type: String, required: true },
+    company: { type: String, required: true },
     location: String,
 
     workMode: {
       type: String,
-      enum: ["WORK_FROM_HOME", "ONSITE", "HYBRID"]
+      enum: ["WORK_FROM_HOME", "ONSITE", "HYBRID"],
+      default: "WORK_FROM_HOME",
     },
 
     jobType: {
       type: String,
-      enum: ["FULL_TIME", "PART_TIME", "INTERNSHIP"]
+      enum: ["FULL_TIME", "PART_TIME", "INTERNSHIP"],
+      default: "INTERNSHIP",
     },
 
     startDate: String,
@@ -24,14 +30,17 @@ const JobSchema = new mongoose.Schema(
     stipend: {
       min: Number,
       max: Number,
-      currency: String
+      currency: {
+        type: String,
+        default: "INR",
+      },
     },
 
     applyBy: Date,
 
     applicants: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     about: String,
@@ -43,19 +52,20 @@ const JobSchema = new mongoose.Schema(
 
     skills: [String],
 
-    createdBy: String,
+    createdBy: {
+      type: String, // clerkId
+      required: true,
+    },
 
-    // ✅ NEW FIELDS
     no_of_questions: {
       type: Number,
-      default: 1
+      default: 1,
     },
 
     questions: {
-      type: [String], // array of questions
-      default: []
-    }
-
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
 );

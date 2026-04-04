@@ -23,8 +23,11 @@ export async function GET(req) {
     }
 
     const hasResume = user.keywords && user.keywords.length > 0;
-
-    return NextResponse.json({ hasResume });
+return NextResponse.json({
+  role: user.role,
+  hasResume: hasResume,
+  keywords: user.keywords
+});
 
   } catch (err) {
     console.log("ERROR:", err);

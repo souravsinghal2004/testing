@@ -22,11 +22,12 @@ export default function Page() {
     const { isLoaded, isSignedIn } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
+ useEffect(() => {
     if (!isLoaded) return;
 
     if (isSignedIn) {
-      router.replace("/login"); // app/login/page.jsx
+      // 🔥 IMPORTANT CHANGE
+      router.replace("/auth-redirect");
     }
   }, [isLoaded, isSignedIn, router]);
 
