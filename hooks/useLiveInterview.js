@@ -5,21 +5,17 @@ import * as faceapi from "face-api.js";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
-
-
 export default function useLiveInterview() {
 
-
-
-
   const [jobData, setJobData] = useState(null);
-const [dbQuestions, setDbQuestions] = useState([]);
+  const [dbQuestions, setDbQuestions] = useState([]);
 
   const hasStartedRef = useRef(false);
   const searchParams = useSearchParams();
 
   const title = searchParams.get("title");
   const candidateName = searchParams.get("name");
+  const isInterviewStoppedRef = useRef(false);
 
   const [messages, setMessages] = useState([]);
   const [recording, setRecording] = useState(false);
@@ -37,432 +33,380 @@ const [dbQuestions, setDbQuestions] = useState([]);
   const voiceRef = useRef(null);
   const isEndingRef = useRef(false);
 
- 
-
   const questionCount = useRef(0);
   const askedQuestions = useRef([]);
 
-  
-const { user } = useUser();
-const jobId = searchParams.get("jobId");
+  const { user } = useUser();
+  const jobId = searchParams.get("jobId");
+
+  const transitionLines = [
+  "Alright, let’s move on to the next question.",
+  "Let’s proceed to the next question.",
+  "Moving ahead, here is your next question.",
+  "Now, let’s continue with the next question."
+];
 
 
- async function fetchJobDetails() {
+  useEffect(() => {
+  if (!jobData) return;
 
-  
-  try {
-    const res = await fetch(`/api/jobs/${jobId}`); // ✅ FIXED
-    const data = await res.json();
+  console.log("🔥 STATE READY:", {
+    dbQuestions,
+    jobData
+  });
 
-    console.log("🔥 JOB DATA:", data);
+  startInterview();
 
-    setJobData(data);
-    setDbQuestions(data.questions || []);
+}, [jobData]);
 
 
-    console.log("🔥 JOB DATA:", data);
-console.log("🔥 QUESTIONS LENGTH:", data.questions?.length);
 
-    questionCount.current = 0;
-  } catch (err) {
-    console.error("Job fetch error:", err);
+
+
+
+  /* ---------------- FETCH JOB ---------------- */
+  async function fetchJobDetails() {
+    try {
+      console.log("🚀 FETCH JOB START:", jobId);
+
+      const res = await fetch(`/api/jobs/${jobId}`);
+      const data = await res.json();
+
+      console.log("✅ JOB DATA:", data);
+      console.log("📊 QUESTIONS FROM DB:", data.questions);
+
+      setJobData(data);
+      setDbQuestions(data.questions || []);
+      questionCount.current = 0;
+
+    } catch (err) {
+      console.error("❌ Job fetch error:", err);
+    }
   }
+
+  /* ---------------- INIT ---------------- */
+  useEffect(() => {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+
+    const init = async () => {
+      console.log("🟢 INIT INTERVIEW");
+
+      await new Promise(resolve => {
+        function check() {
+          const voices = speechSynthesis.getVoices();
+          if (voices.length) {
+            voiceRef.current =
+              voices.find(v => v.name.includes("David")) ||
+              voices.find(v => v.lang === "en-US");
+            console.log("🎤 Voice Loaded:", voiceRef.current?.name);
+            resolve();
+          } else setTimeout(check, 100);
+        }
+        check();
+      });
+
+      await initMedia();
+      detectFace();
+
+      await fetchJobDetails();
+      startInterview();
+    };
+
+    init();
+  }, []);
+
+  /* ---------------- SPEECH ---------------- */
+  function speak(text, cb = null) {
+     if (isInterviewStoppedRef.current) return;
+    console.log("🗣️ AI SPEAK:", text);
+
+    speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    if (voiceRef.current) utter.voice = voiceRef.current;
+
+    utter.onend = () => {
+      console.log("✅ Speech Ended");
+      if (cb) return cb();
+      if (!isEndingRef.current) startRecording();
+    };
+
+    speechSynthesis.speak(utter);
+  }
+
+
+  function getRandomTransition() {
+  return transitionLines[Math.floor(Math.random() * transitionLines.length)];
 }
 
 
-
-useEffect(() => {
-  if (hasStartedRef.current) return;
-
-  hasStartedRef.current = true;
-
-  const init = async () => {
-    await initMedia();
-    detectFace();
-    await fetchJobDetails(); // ✅ wait properly
-   
-  };
-
-  init();
-}, []);
-
-useEffect(() => {
-  if (dbQuestions.length === 0) return;
-
-  console.log("✅ QUESTIONS LOADED:", dbQuestions);
-
-  startInterview();
-}, [dbQuestions]);
-
-
-
-  /* VOICE LOADER */
-  useEffect(() => {
-
-    function loadVoices() {
-
-      const voices = speechSynthesis.getVoices();
-
-      if (!voices.length) return;
-
-      voiceRef.current =
-        voices.find(v => v.name.includes("David")) ||
-        voices.find(v => v.name.includes("Google UK English Male")) ||
-        voices.find(v => v.lang === "en-US");
-
-    }
-
-    loadVoices();
-    speechSynthesis.onvoiceschanged = loadVoices;
-
-  }, []);
-
-
-
-
-  /* CLEAN AI RESPONSE */
-  function cleanAIResponse(text) {
-
-    if (!text) return "";
-
-    if (text.includes("INTERVIEW_COMPLETE")) {
-      return "INTERVIEW_COMPLETE";
-    }
-
-    text = text
-      .replace(/mock interview/gi, "")
-      .replace(/simulation interview/gi, "");
-
-    const question = text.match(/[^?]*\?/);
-
-    if (question) return question[0];
-
-    return `Explain a concept related to ${title}?`;
-
-  }
-
-  /* CHAT */
   function addAI(text) {
+    console.log("🤖 AI MESSAGE:", text);
 
-    if (text === "INTERVIEW_COMPLETE") {
-      finishInterview();
-      return;
-    }
+    if (text === "INTERVIEW_COMPLETE") return finishInterview();
 
+
+     const isQuestion = text.includes("?");
+
+  const finalText = isQuestion
+    ? `${getRandomTransition()} ${text}`
+    : text;
+
+    
     setMessages(prev => [...prev, { sender: "ai", text }]);
 
     if (text.includes("?")) {
       askedQuestions.current.push(text);
+      console.log("📌 Asked Questions:", askedQuestions.current);
     }
 
     speak(text);
   }
 
   function addUser(text) {
+    console.log("👤 USER ANSWER:", text);
     setMessages(prev => [...prev, { sender: "user", text }]);
   }
 
-  /* SPEECH */
-  function speak(text, onEndCallback = null) {
+  /* ---------------- START ---------------- */
+  async function startInterview() {
 
-    speechSynthesis.cancel();
+    if (isInterviewStoppedRef.current) return;
+    console.log("🎬 START INTERVIEW");
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    const greeting = generateGreeting();
+    setSetupPopup(false);
 
-    if (voiceRef.current) {
-      utterance.voice = voiceRef.current;
-    }
+    setMessages([{ sender: "ai", text: greeting }]);
 
-    utterance.rate = 0.9;
+    await new Promise(res => speak(greeting, res));
 
-    utterance.onend = () => {
+    questionCount.current = 0;
 
-      if (onEndCallback) {
-        onEndCallback();
-        return;
-      }
+    console.log("🎯 START DATA:", {
+  dbQuestions,
+  total: jobData?.no_of_questions
+});
 
-      if (!isEndingRef.current) {
-        startRecording();
-      }
+    const total = jobData?.no_of_questions || 2;
 
-    };
+    const isPureDB = dbQuestions.length >= total;
+    const isHybrid = dbQuestions.length > 0 && dbQuestions.length < total;
+    const isAIOnly = dbQuestions.length === 0;
 
-    speechSynthesis.speak(utterance);
-
-  }
-
-  /* START INTERVIEW */
-async function startInterview() {
-
-  console.log("🚀 START INTERVIEW");
-console.log("DB QUESTIONS AT START:", dbQuestions);
-
-  // ✅ prevent double greeting
-  if (messages.length > 0) return;
-
-  while (!voiceRef.current) {
-    await new Promise(r => setTimeout(r, 100));
-  }
-console.log("🚀 USING DB QUESTIONS:", dbQuestions);
-  const greeting = generateGreeting();
-  setSetupPopup(false);
-
-  setMessages([{ sender: "ai", text: greeting }]); // ✅ force replace instead of append
-
-  speak(greeting, async () => {
-
-    // ✅ DB QUESTIONS FIRST
-    if (dbQuestions.length > 0) {
-      const firstQuestion = dbQuestions[0];
-      addAI(firstQuestion);
-      return;
-    }
-
-    // ✅ fallback AI
-    setMessages(prev => [...prev, { sender: "ai", text: "__THINKING__" }]);
-
-    const res = await fetch("/api/interview/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        candidateName,
-        jobTitle: title,
-        askedQuestions: [],
-        questionCount: 0
-      })
+    console.log("📊 MODE CHECK:", {
+      total,
+      dbLength: dbQuestions.length,
+      isPureDB,
+      isHybrid,
+      isAIOnly
     });
 
-    setMessages(prev => prev.filter(m => m.text !== "__THINKING__"));
+    if (isPureDB || isHybrid) {
+      console.log("👉 FIRST QUESTION FROM DB");
+      addAI(dbQuestions[0]);
+    } else {
+      console.log("👉 FIRST QUESTION FROM AI");
+      await generateAIQuestion();
+    }
+  }
 
-    const data = await res.json();
-    const reply = cleanAIResponse(data.message);
+  /* ---------------- AI QUESTION ---------------- */
+  async function generateAIQuestion(userText = "") {
 
-    addAI(reply);
-  });
-}
+     if (isInterviewStoppedRef.current) return;
 
-  /* RECORDING */
+    console.log("🧠 GENERATING AI QUESTION...");
+
+    setMessages(prev => [...prev, { sender: "ai", text: "__THINKING__" }]);
+
+    try {
+      const res = await fetch("/api/interview/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          userMessage: userText,
+          history: messages,
+          askedQuestions: askedQuestions.current,
+          questionCount: questionCount.current,
+          jobTitle: title,
+          candidateName,
+        })
+      });
+
+      const data = await res.json();
+
+      console.log("🧠 AI RAW RESPONSE:", data);
+
+      let reply = cleanAIResponse(data.message);
+
+      setMessages(prev => prev.filter(m => m.text !== "__THINKING__"));
+
+      console.log("✅ AI CLEAN QUESTION:", reply);
+
+      addAI(reply);
+
+    } catch (err) {
+      console.error("❌ AI ERROR:", err);
+      addAI(`Explain a concept related to ${title}?`);
+    }
+  }
+
+  /* ---------------- RECORDING ---------------- */
   function startRecording() {
+
+     if (isInterviewStoppedRef.current) return;
+
+
+    console.log("🎙️ START RECORDING");
 
     if (!streamRef.current) return;
 
     audioChunksRef.current = [];
 
-    const audioContext = new AudioContext();
-
-    const source = audioContext.createMediaStreamSource(streamRef.current);
-
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = 2.5;
-
-    const destination = audioContext.createMediaStreamDestination();
-
-    source.connect(gainNode);
-    gainNode.connect(destination);
-
-    const audioStream = destination.stream;
-
-    const recorder = new MediaRecorder(audioStream);
-
+    const recorder = new MediaRecorder(streamRef.current);
     recorderRef.current = recorder;
 
     recorder.onstart = () => setRecording(true);
 
-    recorder.ondataavailable = (e) => {
+    recorder.ondataavailable = e => {
       if (e.data.size > 0) audioChunksRef.current.push(e.data);
     };
 
     recorder.onstop = async () => {
+      console.log("⏹️ RECORDING STOPPED");
 
       setRecording(false);
 
-      const blob = new Blob(audioChunksRef.current, {
-        type: "audio/webm"
-      });
+      const blob = new Blob(audioChunksRef.current);
+      console.log("📦 AUDIO SIZE:", blob.size);
 
       const text = await transcribe(blob);
 
-    if (!text || text.trim().length < 2) {
+      console.log("📝 TRANSCRIBED TEXT:", text);
 
-  setProcessing(false);
+      if (!text || text.length < 2) {
+  const lastQ = askedQuestions.current.at(-1);
 
-  const lastQuestion =
-    askedQuestions.current[askedQuestions.current.length - 1];
+  console.log("⚠️ EMPTY RESPONSE → REPEAT");
 
-  speak(
-    `I could not clearly hear your response. Let me repeat the question. ${lastQuestion}`
-  );
+  setProcessing(false); // 🔥 VERY IMPORTANT
+
+  speak(`I could not hear you properly. Let me repeat the question. ${lastQ}`);
 
   return;
 }
 
       addUser(text);
-
-      await sendToAI(text);
-
+      await handleNextStep(text);
     };
 
     recorder.start();
-
   }
 
   function stopRecording() {
-
-  if (
-    recorderRef.current &&
-    recorderRef.current.state !== "inactive"
-  ) {
-    // show popup immediately
-    setProcessing(true);
-
-    recorderRef.current.stop();
+    
+    if (recorderRef.current?.state !== "inactive") {
+      console.log("🛑 STOP RECORDING");
+      setProcessing(true);
+      recorderRef.current.stop();
+    }
   }
 
-}
+  /* ---------------- CORE FLOW ---------------- */
+  async function handleNextStep(userText) {
 
-  /* TRANSCRIBE */
-  async function transcribe(blob) {
 
-    const formData = new FormData();
-    formData.append("file", blob);
+     if (isInterviewStoppedRef.current) return;
 
-    const res = await fetch("/api/transcribe", {
-      method: "POST",
-      body: formData
+    const total = jobData?.no_of_questions || 2;
+
+    questionCount.current++;
+
+    console.log("📊 NEXT STEP:", {
+      questionCount: questionCount.current,
+      total,
+      dbLength: dbQuestions.length
     });
 
+    if (questionCount.current >= total) {
+      console.log("🏁 INTERVIEW END TRIGGERED");
+      return finishInterview();
+    }
+
+    const isPureDB = dbQuestions.length >= total;
+    const isHybrid = dbQuestions.length > 0 && dbQuestions.length < total;
+    const isAIOnly = dbQuestions.length === 0;
+
+    console.log("📊 MODE:", { isPureDB, isHybrid, isAIOnly });
+
+    if (isPureDB) {
+      console.log("👉 NEXT FROM DB");
+      setProcessing(false);
+      return addAI(dbQuestions[questionCount.current]);
+    }
+
+    if (isHybrid) {
+      if (questionCount.current < dbQuestions.length) {
+        console.log("👉 HYBRID: DB QUESTION");
+        setProcessing(false);
+        return addAI(dbQuestions[questionCount.current]);
+      } else {
+        console.log("👉 HYBRID: AI QUESTION");
+        setProcessing(false);
+        return await generateAIQuestion(userText);
+      }
+    }
+
+    if (isAIOnly) {
+      console.log("👉 AI ONLY MODE");
+      setProcessing(false);
+      return await generateAIQuestion(userText);
+    }
+  }
+
+  /* ---------------- TRANSCRIBE ---------------- */
+  async function transcribe(blob) {
+    const fd = new FormData();
+    fd.append("file", blob);
+
+    const res = await fetch("/api/transcribe", { method: "POST", body: fd });
     const data = await res.json();
 
     return data.text || "";
-
   }
 
-  /* SEND TO AI */
-  async function sendToAI(text) {
+  /* ---------------- FINISH ---------------- */
+  async function finishInterview() {
+    if (isEndingRef.current) return;
 
-  const totalQuestions =
-  dbQuestions.length > 0
-    ? dbQuestions.length
-    : jobData?.no_of_questions || 2;
+    console.log("🏁 FINISH INTERVIEW");
 
-  if (questionCount.current >= totalQuestions) {
-    finishInterview();
-    return;
+    isEndingRef.current = true;
+    speechSynthesis.cancel();
+    stopRecording();
+
+    const msg = `Thank you for participating. Your interview is now complete. Your responses have been recorded and will be evaluated automatically. We wish you the best of luck.`;
+
+    setMessages(prev => [...prev, { sender: "ai", text: msg }]);
+
+    speak(msg, async () => {
+      console.log("📊 GENERATING REPORT...");
+      await generateReport();
+      setInterviewEnded(true);
+    });
   }
 
-  console.log("📊 QUESTION COUNT:", questionCount.current);
-console.log("📊 TOTAL QUESTIONS:", dbQuestions.length);
-
-  // ✅ CASE 1: DB QUESTIONS MODE
-if (dbQuestions.length > 0) {
-  questionCount.current++;
-
-  if (questionCount.current >= dbQuestions.length) {
-    setProcessing(false); // ✅ ADD THIS
-    finishInterview();
-    return;
-  }
-
-  const nextQuestion = dbQuestions[questionCount.current];
-
-  setProcessing(false); // ✅ ADD THIS
-
-  addAI(nextQuestion);
-  return;
-}
-
-  // ✅ CASE 2: AI MODE (your existing)
-  setMessages(prev => [...prev, { sender: "ai", text: "__THINKING__" }]);
-
-  const res = await fetch("/api/interview/chat", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      userMessage: text,
-      history: messages,
-      askedQuestions: askedQuestions.current,
-      questionCount: questionCount.current,
-      jobTitle: title,
-      candidateName
-    })
-  });
-
-  const data = await res.json();
-  let reply = cleanAIResponse(data.message);
-
-  setProcessing(false);
-
-  setMessages(prev => prev.filter(m => m.text !== "__THINKING__"));
-
-  questionCount.current++;
-
-  if (questionCount.current >= totalQuestions) {
-    finishInterview();
-    return;
-  }
-
-  if (reply === "INTERVIEW_COMPLETE") {
-    finishInterview();
-    return;
-  }
-
-  addAI(reply);
-}
-
-  /* FINISH */
-async function finishInterview() {
-  if (isEndingRef.current) return;
-
-  isEndingRef.current = true;
-
-  speechSynthesis.cancel();
-  stopRecording();
-
-  const endMessage = `Alright ${candidateName || "Candidate"}, this concludes your interview.
-
-We will now analyze your performance and generate your report.
-
-Please wait a few seconds.`;
-
-  // ✅ show in chat
-  setMessages(prev => [...prev, { sender: "ai", text: endMessage }]);
-
-  // ✅ speak FIRST, then trigger popup + report AFTER speech ends
-  speak(endMessage, async () => {
-    await generateReport();
-    setInterviewEnded(true); // 🔥 now happens AFTER speaking
-  });
-}
-
-  /* MEDIA */
+  /* ---------------- MEDIA ---------------- */
   async function initMedia() {
-
-    const stream =
-      await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     streamRef.current = stream;
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
-
+    if (videoRef.current) videoRef.current.srcObject = stream;
   }
 
   function generateGreeting() {
-
-    return `Hello ${candidateName || "Candidate"}.
+      return `Hello ${candidateName || "Candidate"}.
 
 This is your technical interview for the role of ${title}.
 
@@ -471,115 +415,95 @@ I will ask you a series of technical questions to evaluate your knowledge.
 Please answer clearly and concisely.
 
 Let's begin with Question 1.`;
-
   }
 
-  /* FACE DETECTION */
   async function detectFace() {
-
     if (!videoRef.current) return;
 
-    const detections =
-      await faceapi.detectAllFaces(
-        videoRef.current,
-        new faceapi.TinyFaceDetectorOptions()
-      );
+    const detections = await faceapi.detectAllFaces(
+      videoRef.current,
+      new faceapi.TinyFaceDetectorOptions()
+    );
 
     if (videoContainerRef.current) {
-
       videoContainerRef.current.style.border =
-        detections.length
-          ? "5px solid green"
-          : "5px solid red";
-
+        detections.length ? "5px solid green" : "5px solid red";
     }
 
     requestAnimationFrame(detectFace);
-
   }
 
+  function cleanAIResponse(text) {
+    if (!text) return "";
+    const q = text.match(/[^?]*\?/);
+    return q ? q[0] : `Explain ${title}?`;
+  }
 
   function buildQAArray(messages) {
-  const qa = [];
-
-  for (let i = 0; i < messages.length; i++) {
-    if (
-      messages[i].sender === "ai" &&
-      messages[i].text.includes("?") &&
-      messages[i + 1]?.sender === "user"
-    ) {
-      qa.push({
-        question: messages[i].text,
-        answer: messages[i + 1].text,
-      });
+    const qa = [];
+    for (let i = 0; i < messages.length; i++) {
+      if (
+        messages[i].sender === "ai" &&
+        messages[i].text.includes("?") &&
+        messages[i + 1]?.sender === "user"
+      ) {
+        qa.push({
+          question: messages[i].text,
+          answer: messages[i + 1].text,
+        });
+      }
     }
+    console.log("📊 FINAL QA:", qa);
+    return qa;
   }
 
-  return qa;
+
+  function endInterviewManually() {
+  console.log("🛑 MANUAL END");
+
+  isInterviewStoppedRef.current = true;
+
+  speechSynthesis.cancel();
+
+  try {
+    if (recorderRef.current?.state !== "inactive") {
+      recorderRef.current.stop();
+    }
+  } catch (e) {}
+
+  try {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+  } catch (e) {}
+
+  setRecording(false);
+  setProcessing(false);
+
+  isEndingRef.current = true; // prevent auto flow
 }
 
+  const generateReport = async () => {
+    const qa = buildQAArray(messages);
 
-const generateReport = async () => {
-  try {
-    const controller = new AbortController();
-
-    setTimeout(() => controller.abort(), 10000); // 10s safety
-
-    const qaArray = buildQAArray(messages);
+    console.log("📤 SENDING REPORT:", qa);
 
     const res = await fetch("/api/analyze", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        qa: qaArray,
+        qa,
         jobTitle: title,
         candidateName,
-         userId: user?.id,     // ✅ from Clerk
-    jobId: jobId  
-      }),
-      signal: controller.signal,
+        userId: user?.id,
+        jobId
+      })
     });
 
-    console.log("📤 SENDING TO ANALYZE:", {
-  qa: qaArray,
-  jobTitle: title,
-  candidateName,
-  userId: user?.id,
-  jobId
-});
-
-    const text = await res.text();
-
-    let data;
-
-    try {
-      data = JSON.parse(text);
-    } catch {
-      console.log("Invalid JSON, fallback used");
-      data = { error: "Invalid AI response" };
-    }
+    const data = await res.json();
+    console.log("✅ REPORT RESPONSE:", data);
 
     localStorage.setItem("report", JSON.stringify(data));
-
     return data;
-
-  } catch (err) {
-    console.error("Timeout or error:", err);
-
-    const fallback = { error: "Report failed" };
-
-    localStorage.setItem("report", JSON.stringify(fallback));
-
-    return fallback;
-  }
-};
-
-
-
-
-
+  };
 
   return {
     messages,
@@ -592,11 +516,7 @@ const generateReport = async () => {
     title,
     interviewEnded,
     generateReport,
-    jobId
+    jobId,
+    endInterviewManually
   };
-
-
-
-  
-
 }

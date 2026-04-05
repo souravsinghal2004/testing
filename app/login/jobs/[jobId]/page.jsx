@@ -13,7 +13,19 @@ export default async function JobDetailsPage({ params }) {
   console.log("PARAM ID:", jobId);
 
   // since you're using Mongo _id in URL
-  const job = await Job.findById(jobId).lean();
+ const jobData = await Job.findById(jobId).lean();
+
+const job = {
+  ...jobData,
+  _id: jobData._id.toString(),
+
+  // ✅ FIX: convert startDate to readable string
+  startDate: jobData.startDate
+    ? new Date(jobData.startDate).toLocaleDateString()
+    : "N/A",
+
+};
+
 
   if (!job) {
     console.log("JOB NOT FOUND IN DB");

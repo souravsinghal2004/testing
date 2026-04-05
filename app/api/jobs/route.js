@@ -14,8 +14,7 @@ export async function GET(req) {
     if (userId) {
       const user = await User.findOne({ clerkId: userId });
 
-      console.log("👤 USER:", user);
-      console.log("🔑 KEYWORDS:", user?.keywords);
+    
 
       // ❌ NO FALLBACK NOW
       if (!user || !user.keywords || user.keywords.length === 0) {

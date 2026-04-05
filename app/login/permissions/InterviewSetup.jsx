@@ -21,6 +21,9 @@ export default function InterviewSetup() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState("");
 
+
+  
+
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
       router.replace("/");
@@ -30,16 +33,17 @@ export default function InterviewSetup() {
   useEffect(() => {
     async function enableMedia() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
+      const stream = await navigator.mediaDevices.getUserMedia({
+  video: true,
+  audio: true,
+});
 
-        streamRef.current = stream;
+streamRef.current = stream;
+window.__INTERVIEW_STREAM__ = stream; // ✅ ADD THIS
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+if (videoRef.current) {
+  videoRef.current.srcObject = stream;
+}
 
         detectAudio(stream);
         setMediaAllowed(true);

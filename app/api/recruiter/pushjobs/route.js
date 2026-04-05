@@ -41,6 +41,12 @@ export async function POST(req) {
 
     const job = await Job.create({
       ...body,
+  startDate:
+    body.startDate && !isNaN(new Date(body.startDate).getTime())
+      ? new Date(body.startDate).toISOString()
+      : null,
+
+
       jobId,
       createdBy: userId,
       applicants: 0,

@@ -49,7 +49,7 @@ export default function ResultsPage() {
         {loading ? (
           <p>Loading...</p>
         ) : reports.length === 0 ? (
-          <p className="text-gray-400">No candidates found.</p>
+          <h1 className="text-white text-3xl">Till Now no one has given interview.</h1>
         ) : (
 
           <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">

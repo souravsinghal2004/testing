@@ -19,12 +19,13 @@ const JobSchema = new mongoose.Schema(
     },
 
     jobType: {
-      type: String,
-      enum: ["FULL_TIME", "PART_TIME", "INTERNSHIP"],
-      default: "INTERNSHIP",
-    },
+  type: String,
+  enum: ["INTERNSHIP", "FULL_TIME"],
+},
 
-    startDate: String,
+    startDate: {
+  type: Date,
+},
     duration: String,
 
     stipend: {

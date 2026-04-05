@@ -9,8 +9,7 @@ const file = formData.get("file");
 
 const audioBuffer = await file.arrayBuffer();
 
-    console.log("🟢 Audio size:", audioBuffer.byteLength);
-
+   
     const uploadRes = await fetch("https://api.assemblyai.com/v2/upload", {
       method: "POST",
       headers: {
@@ -21,7 +20,7 @@ const audioBuffer = await file.arrayBuffer();
     });
 
     const uploadData = await uploadRes.json();
-    console.log("🟢 Upload response:", uploadData);
+  
 
     const transcriptRes = await fetch(
       "https://api.assemblyai.com/v2/transcript",
@@ -38,8 +37,7 @@ const audioBuffer = await file.arrayBuffer();
     );
 
     const transcriptData = await transcriptRes.json();
-    console.log("🟢 Transcript job:", transcriptData);
-
+ 
     while (true) {
       const pollRes = await fetch(
         `https://api.assemblyai.com/v2/transcript/${transcriptData.id}`,

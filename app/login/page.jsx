@@ -8,105 +8,66 @@ import { Header } from "@/components/Navbar";
 
 export default function UserDashboardPage() {
 
-
-  console.log("🚨 LOGIN PAGE HIT"); 
   const { isLoaded, isSignedIn, user } = useUser();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-
-
+  /* 🔥 SINGLE CLEAN EFFECT (no duplicate calls) */
   useEffect(() => {
-  if (!isLoaded || !isSignedIn || !user) return;
+    if (!isLoaded || !isSignedIn || !user) return;
 
-  async function checkRole() {
-    try {
-      const res = await fetch(`/api/user?clerkId=${user.id}`);
-      const userData = await res.json();
+    async function init() {
+      try {
+        // 1️⃣ Get user data
+        const userRes = await fetch(`/api/user?clerkId=${user.id}`);
+        const userData = await userRes.json();
 
-      if (userData?.role === "RECRUITER") {
-        router.push("/recruiter");
+        // 2️⃣ Wait until keywords exist
+        if (!userData?.keywords || userData.keywords.length === 0) {
+          console.log("Waiting for keywords...");
+          return;
+        }
+
+        // 3️⃣ Fetch jobs
+        const res = await fetch(`/api/jobs?userId=${user.id}`);
+        const data = await res.json();
+
+        setJobs(data);
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Role check failed", err);
-    }
-  }
-
-  checkRole();
-}, [isLoaded, isSignedIn, user]);
-
-
-
-  /* FETCH JOBS */
-useEffect(() => {
-  if (!isLoaded || !isSignedIn || !user) return;
-
-  async function fetchJobs() {
-    try {
-      const res = await fetch(`/api/jobs?userId=${user.id}`);
-      const data = await res.json();
-      setJobs(data);
-    } catch (error) {
-      console.error("Failed to fetch jobs", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  fetchJobs();
-}, [isLoaded, isSignedIn, user]);
-
-  /* AUTH GUARD */
-useEffect(() => {
-  if (!isLoaded || !isSignedIn || !user) return;
-
-  async function fetchJobs() {
-    // 🔥 first get user
-    const userRes = await fetch(`/api/user?clerkId=${user.id}`);
-    const userData = await userRes.json();
-
-    // ⛔ wait until keywords exist
-    if (!userData?.keywords || userData.keywords.length === 0) {
-      console.log("Waiting for keywords...");
-      return;
     }
 
-    // ✅ now fetch jobs
-    const res = await fetch(`/api/jobs?userId=${user.id}`);
-    const data = await res.json();
-    setJobs(data);
-    setLoading(false);
-  }
+    init();
+  }, [isLoaded, isSignedIn, user]);
 
-  fetchJobs();
-}, [isLoaded, isSignedIn, user]);
+  /* 🔥 SAVE USER (runs once) */
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
 
-  /* SAVE USER */
- useEffect(() => {
-  if (!isLoaded || !isSignedIn || !user) return;
-
-  async function saveUser() {
-    try {
-      await fetch("/api/save-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          clerkId: user.id,
-          name: `${user.firstName || ""} ${user.lastName || ""}`,
-          email: user.primaryEmailAddress?.emailAddress,
-          
-        }),
-      });
-    } catch (err) {
-      console.error("User save failed", err);
+    async function saveUser() {
+      try {
+        await fetch("/api/save-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            clerkId: user.id,
+            name: `${user.firstName || ""} ${user.lastName || ""}`,
+            email: user.primaryEmailAddress?.emailAddress,
+          }),
+        });
+      } catch (err) {
+        console.error("User save failed", err);
+      }
     }
-  }
 
-  saveUser();
-}, [isLoaded, isSignedIn, user]);
+    saveUser();
+  }, []); // ✅ run once only
 
   if (!isLoaded || !isSignedIn) return null;
 
