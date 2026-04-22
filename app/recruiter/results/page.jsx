@@ -1,6 +1,6 @@
 "use client";
 
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -41,7 +41,7 @@ export default function RecruiterDashboard() {
         {/* 🔹 SIDEBAR */}
        
 
- <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+<aside className="fade-in w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
           <h2 className="text-xl font-bold text-blue-400 mb-8">
             Recruiter Panel
           </h2>
@@ -50,14 +50,14 @@ export default function RecruiterDashboard() {
 
             <button
              onClick={() => router.push("/recruiter")}
-              className="block w-full text-left font-semibold hover:text-blue-400"
+               className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               ➕ Post New Job
             </button>
 
             <button
               onClick={() => router.push("/recruiter/jobs")}
-              className="block w-full text-left hover:text-blue-400"
+                className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               📋 Your Jobs
             </button>
@@ -70,7 +70,7 @@ export default function RecruiterDashboard() {
 
             <button
               onClick={() => router.push("/recruiter/profile")}
-              className="block w-full text-left hover:text-blue-400"
+                className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               👤 Profile
             </button>
@@ -89,7 +89,7 @@ export default function RecruiterDashboard() {
             <p className="text-gray-400">No jobs posted yet.</p>
           ) : (
 
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
+            <div className="card-hover card-glow card-lift card-border cursor-pointer bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
 
               <table className="w-full text-sm text-left">
 

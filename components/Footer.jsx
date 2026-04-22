@@ -1,63 +1,74 @@
-import React from 'react'
-import { FaGithub, FaLinkedin, FaEnvelope } from 'react-icons/fa'
+'use client'
+import { motion } from 'framer-motion'
+import { Sparkles, Github, Twitter, Linkedin, Youtube } from 'lucide-react'
 
-const Footer = () => {
+const links = [
+  { label: 'About', href: '#' },
+  { label: 'Contact', href: '#' },
+  { label: 'Privacy', href: '#' },
+  { label: 'Terms', href: '#' },
+]
+
+const socials = [
+  { icon: Github, href: '#' },
+  { icon: Twitter, href: '#' },
+  { icon: Linkedin, href: '#' },
+  { icon: Youtube, href: '#' },
+]
+
+export default function Footer() {
   return (
-    <footer className="bg-zinc-900 text-gray-300 py-5 border-t border-zinc-800">
-      <div className="container mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <footer className="relative border-t border-white/10 py-14">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.7 }}
+        className="mx-auto max-w-6xl px-4"
+      >
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 grid place-items-center glow-blue">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-semibold">AI Job <span className="gradient-text">Portal</span></span>
+          </div>
 
-        {/* Left */}
-        <div className="text-center sm:text-left space-y-0.5">
-          <h4 className="text-sm font-semibold">Sourav Singhal</h4>
-          <p className="text-xs">© {new Date().getFullYear()} All rights reserved.</p>
+          <nav className="flex items-center gap-7 text-sm text-white/60">
+            {links.map((l) => (
+              <motion.a
+                key={l.label}
+                href={l.href}
+                whileHover={{ y: -2, color: '#fff' }}
+                className="transition-colors"
+              >
+                {l.label}
+              </motion.a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            {socials.map((s, i) => {
+              const Icon = s.icon
+              return (
+                <motion.a
+                  key={i}
+                  href={s.href}
+                  whileHover={{ scale: 1.15, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                  className="h-9 w-9 grid place-items-center rounded-lg border border-white/10 bg-white/5 text-white/70 hover:text-white hover:shadow-[0_0_20px_rgba(96,165,250,0.4)] hover:border-blue-400/40 transition-all"
+                >
+                  <Icon className="h-4 w-4" />
+                </motion.a>
+              )
+            })}
+          </div>
         </div>
-
-        {/* Middle */}
-        <div className="text-center">
-          <p className="text-xs text-gray-400">
-            Let’s build something amazing together.
-          </p>
-          <a
-            href="mailto:contactsouravsinghal@gmail.com"
-            className="text-blue-400 text-xs hover:underline"
-          >
-            contactsouravsinghal@gmail.com
-          </a>
+        <div className="mt-10 pt-8 border-t border-white/5 text-center text-xs text-white/40">
+          © {new Date().getFullYear()} AI Job Portal. Crafted with care.
         </div>
-
-        {/* Right */}
-        <div className="flex gap-4 text-xs">
-          <a
-            href="https://github.com/souravsinghal2004"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center hover:text-blue-400 transition"
-          >
-            <FaGithub className="text-lg" />
-          </a>
-
-          <a
-            href="https://www.linkedin.com/in/sourav-singhal-a860b5259/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center hover:text-blue-400 transition"
-          >
-            <FaLinkedin className="text-lg text-blue-500" />
-          </a>
-
-          <a
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=contactsouravsinghal@gmail.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center hover:text-blue-400 transition"
-          >
-            <FaEnvelope className="text-lg text-red-400" />
-          </a>
-        </div>
-
-      </div>
+      </motion.div>
     </footer>
   )
 }
-
-export default Footer

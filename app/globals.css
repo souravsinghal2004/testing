@@ -1,17 +1,51 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* =========================
+   🌙 THEME VARIABLES
+========================= */
+:root {
+  --background: 230 55% 3%;
+  --foreground: 0 0% 100%;
 
+  --card: 230 40% 6%;
+  --card-foreground: 0 0% 100%;
 
-/* 🔥 Custom Dark Scrollbar */
+  --primary: 217 91% 60%;
+  --secondary: 230 30% 12%;
 
+  --muted: 230 20% 14%;
+  --muted-foreground: 220 15% 65%;
+
+  --border: 230 30% 18%;
+  --ring: 217 91% 60%;
+
+  --radius: 0.75rem;
+}
+
+/* =========================
+   🌍 BASE
+========================= */
+* {
+  border-color: hsl(var(--border));
+}
+
+html,
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  scroll-behavior: smooth;
+}
+
+/* =========================
+   🖱️ SCROLLBAR
+========================= */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent; /* no white bg */
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -29,20 +63,7 @@
   scrollbar-color: #3b82f6 transparent;
 }
 
-
-
-/* 🔥 Hide scrollbar but allow scrolling */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE & Edge */
-  scrollbar-width: none;     /* Firefox */
-}
-
-
-
+/* Hide scrollbar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -50,6 +71,247 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
+/* =========================
+   ✨ TEXT EFFECTS
+========================= */
+.gradient-text {
+  background: linear-gradient(120deg, #60a5fa, #a78bfa, #22d3ee);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* =========================
+   🎴 CARD ANIMATIONS
+========================= */
+.card-animate {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 25px 60px rgba(59,130,246,0.25);
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+}
+
+.card-lift:hover {
+  transform: translateY(-8px);
+}
+
+/* Border shine */
+.card-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-border::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.2),
+    transparent
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.card-border:hover::before {
+  animation: shine 0.6s ease forwards;
+}
+
+@keyframes shine {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+
+.nav-link {
+  position: relative;
+  text-decoration: none;
+  color: #333;
+  padding: 4px 0;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  background-color: #0070f3;
+  transform-origin: bottom right;
+  transition: transform 0.25s ease-out;
+  text-decoration-color: white;
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+/* =========================
+   🎬 FADE ANIMATION
+========================= */
+.fade-in {
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* 1. Hide the real mouse */
+.actionable {
+  cursor: pointer;      /* The "Hand" icon for links/buttons */
+}
+
+.not-allowed {
+  cursor: not-allowed;  /* Circle with a slash (for disabled inputs) */
+}
+
+.loading {
+  cursor: wait;         /* The "Hourglass" or "Spinning Wheel" */
+}
+
+.text-entry {
+  cursor: text;         /* The "I-beam" for typing areas */
+}
+
+.move-item {
+  cursor: move;         /* The 4-way arrow for dragging */
+}
+/* =========================
+   🔥 DROP ANIMATION
+========================= */
+@keyframes dropIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-120px) scale(0.9);
+  }
+  70% {
+    transform: translateY(15px) scale(1.03);
+  }
+  85% {
+    transform: translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.drop {
+  opacity: 0;
+}
+
+.drop.animate {
+  animation: dropIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* =========================
+   🔘 BUTTON ANIMATIONS
+========================= */
+.btn-animate {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.btn-animate:hover {
+  transform: translateY(-3px) scale(1.05);
+  color: #60a5fa;
+  text-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+}
+
+.btn-animate:active {
+  transform: scale(0.95);
+}
+
+/* Shine effect */
+.btn-animate::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.2),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.btn-animate:hover::before {
+  left: 100%;
+}
+
+/* =========================
+   🔵 VIEW BUTTON
+========================= */
+.view-btn {
+  transition: all 0.3s ease;
+}
+
+.view-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.5);
+}
+
+
+/* FORCE DARK SCROLLBAR */
+html {
+  scrollbar-color: #3b82f6 #05060f; /* Firefox */
+}
+
+body {
+  background: #05060f;
+}
+
+/* Chrome / Edge / Safari */
+html::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: #05060f;
+}
+
+html::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6, #1e3a8a);
+  border-radius: 10px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6;
+}
+
+
+
 
 @theme inline {
   --color-background: var(--background);
@@ -168,6 +430,9 @@
     @apply border-border outline-ring/50;
   }
   body {
+  
     @apply bg-background text-foreground;
   }
 }
+
+

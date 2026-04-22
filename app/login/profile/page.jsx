@@ -1,6 +1,6 @@
 "use client";
 
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -23,21 +23,21 @@ export default function ProfilePage() {
 
     <div className="flex">
 
-      <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+     <aside className="fade-in w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
         <h2 className="text-xl font-bold text-blue-400 mb-8">
           Candidate Panel
         </h2>
 
         <nav className="space-y-4">
-          <button onClick={() => router.push("/login")} className="hover:text-blue-400">
+          <button onClick={() => router.push("/login")} className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">
             💼 Available Jobs
           </button>
 
-          <button onClick={() => router.push("/login/results")} className="hover:text-blue-400">
+          <button onClick={() => router.push("/login/results")} className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">
             📊 Interview Results
           </button>
 
-          <button onClick={() => router.push("/login/feedback")} className="hover:text-blue-400">
+          <button onClick={() => router.push("/login/feedback")}  className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">
             🧠 Skill Feedback
           </button>
 

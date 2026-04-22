@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 
 export default function UserDashboardPage() {
 
@@ -12,6 +12,15 @@ export default function UserDashboardPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+const [animate, setAnimate] = useState(false);
+
+useEffect(() => {
+  setAnimate(false); // reset
+  const timeout = setTimeout(() => setAnimate(true), 50); // trigger again
+  return () => clearTimeout(timeout);
+}, []);
+
+
 
   /* 🔥 SINGLE CLEAN EFFECT (no duplicate calls) */
   useEffect(() => {
@@ -72,12 +81,12 @@ export default function UserDashboardPage() {
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+   <div className="h-screen overflow-hidden bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
   <Header />
 
-  <div className="flex h-[calc(100vh-64px)]"> 
+  <div className="flex h-[calc(100vh-64px)]">  
         {/* Sidebar */}
-          <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+         <aside className="fade-in w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
           <h2 className="text-xl font-bold text-blue-400 mb-8">
             Candidate Panel
           </h2>
@@ -93,35 +102,37 @@ export default function UserDashboardPage() {
 
             <button
               onClick={() => router.push("/login/results")}
-              className="block w-full text-left hover:text-blue-400"
+               className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               📊 Interview Results
             </button>
 
-            <button      className="block w-full text-left hover:text-blue-400">
+            <button    
+            onClick={() => router.push("/login/feedback")}
+               className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">
+             
               🧠 Skill Feedback
             </button>
 
-            <button
-              onClick={() => router.push("/login/profile")}
-              className="block w-full text-left hover:text-blue-400"
-            >
-              📄 Profile
-            </button>
+         <button
+  onClick={() => router.push("/login/profile")}
+  className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
+>
+  📄 Profile
+</button>
           </nav>
         </aside>
 
         {/* Main Content */}
         
-            <main className="flex-1 p-10 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500">
-
-          <h1 className="text-3xl font-bold mb-6 text-blue-300">
-            Welcome, {user?.firstName || "Candidate"}
-          </h1>
-
-          <p className="text-gray-600 mb-8">
-            Browse available jobs and apply for AI-assisted interviews.
-          </p>
+            <main className="flex-1 p-10 overflow-y-auto ">
+<h1
+  className={`text-3xl font-bold mb-6 text-blue-300 drop ${
+    animate ? "animate" : ""
+  }`}
+>
+  Welcome, {user?.firstName || "Candidate"}
+</h1>
 
           {/* Jobs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -130,13 +141,19 @@ export default function UserDashboardPage() {
   ) : jobs.length === 0 ? (
     <p className="text-white">No jobs available.</p>
   ) : (
-    jobs.map((job) => (
-      <div
-        key={job._id}
-        className="rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl"
-      >
-        <div className="rounded-3xl bg-[#020617] p-6 text-white">
+   jobs.map((job, i) => (
+ <div
+  key={job._id}
+  style={{ animationDelay: `${i * 0.1}s` }}
+  className={`drop ${animate ? "animate" : ""}`}
+>
+  <div className="card-hover card-glow card-lift card-border  rounded-3xl ">
 
+  <div className="rounded-3xl bg-[#020617] p-6 text-white">
+    {/* content */}
+
+
+      
           {/* 🔥 HEADER */}
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -199,15 +216,19 @@ export default function UserDashboardPage() {
               AI Matched Job
             </span>
 
-            <Link
-              href={`/login/jobs/${job._id}`}
-              className="bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              View Job
-            </Link>
+           <Link
+  href={`/login/jobs/${job._id}`}
+  className=" view-btn bg-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+>
+  View Job
+</Link>
           </div>
-        </div>
-      </div>
+    </div>
+
+  </div>
+</div>
+        
+
     ))
   )}
 </div>

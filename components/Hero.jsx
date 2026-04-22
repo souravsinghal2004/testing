@@ -1,106 +1,138 @@
-import Image from "next/image";
-import Link from "next/link";
+'use client'
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Sparkles, Play } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+const phrases = ['AI-Powered Interviews', 'Smart Job Matching', 'Instant Skill Feedback']
 
 export default function Hero() {
+  const [text, setText] = useState('')
+  const [idx, setIdx] = useState(0)
+  const [del, setDel] = useState(false)
+
+  useEffect(() => {
+    const current = phrases[idx % phrases.length]
+    const speed = del ? 40 : 70
+    const t = setTimeout(() => {
+      if (!del) {
+        setText(current.slice(0, text.length + 1))
+        if (text.length + 1 === current.length) setTimeout(() => setDel(true), 1500)
+      } else {
+        setText(current.slice(0, text.length - 1))
+        if (text.length - 1 === 0) { setDel(false); setIdx(idx + 1) }
+      }
+    }, speed)
+    return () => clearTimeout(t)
+  }, [text, del, idx])
+
+  // cursor parallax
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const sx = useSpring(mx, { stiffness: 40, damping: 20 })
+  const sy = useSpring(my, { stiffness: 40, damping: 20 })
+  const tx1 = useTransform(sx, (v) => v * 30)
+  const ty1 = useTransform(sy, (v) => v * 30)
+  const tx2 = useTransform(sx, (v) => v * -40)
+  const ty2 = useTransform(sy, (v) => v * -40)
+
+  function onMove(e) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    mx.set(((e.clientX - rect.left) / rect.width) - 0.5)
+    my.set(((e.clientY - rect.top) / rect.height) - 0.5)
+  }
+
   return (
-    <section className="relative w-full bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-400">
+    <section onMouseMove={onMove} className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden">
+      <div className="absolute inset-0 animated-gradient" />
+      <div className="absolute inset-0 grid-bg" />
 
-      <div className="max-w-[1400px] mx-auto px-10 py-24 flex items-center min-h-[600px] relative">
+      <motion.div style={{ x: tx1, y: ty1 }} className="absolute -top-32 -left-20 h-[480px] w-[480px] rounded-full bg-blue-600/30 blur-3xl float-slow" />
+      <motion.div style={{ x: tx2, y: ty2 }} className="absolute -bottom-20 -right-24 h-[520px] w-[520px] rounded-full bg-violet-600/30 blur-3xl float-slower" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 h-[320px] w-[320px] rounded-full bg-cyan-500/20 blur-3xl float-slow" />
 
-        {/* LEFT CONTENT */}
-        <div className="max-w-xl z-10">
+      <div className="relative z-10 mx-auto max-w-6xl px-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-white/80 backdrop-blur-md"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+          <span>Introducing AI interviews, now free for students</span>
+        </motion.div>
 
-          <h1 className="text-5xl font-bold text-gray-900 leading-tight">
-            AI-Powered Hiring for Modern Recruiters
-          </h1>
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+          className="mt-6 text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-[1.05]"
+        >
+          Get Hired Faster with
+          <br className="hidden md:block" />
+          <span className="gradient-text">{text}</span>
+          <span className="inline-block w-[3px] h-[0.9em] align-[-0.12em] ml-1 bg-blue-400 animate-pulse" />
+        </motion.h1>
 
-          <p className="mt-6 text-lg text-gray-700">
-            Post a job and let our AI conduct interviews with hundreds of 
-            candidates automatically. Instantly evaluate responses and 
-            shortlist the best talent while eliminating unqualified applicants.
-          </p>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.25 }}
+          className="mx-auto mt-6 max-w-2xl text-lg text-white/70"
+        >
+         Connect with AI-powered real interviews, receive instant skill-level feedback, and land opportunities at companies that match your profile — all in one seamless platform.
+        </motion.p>
 
-          <div className="flex items-center gap-6 mt-8">
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.4 } } }}
+          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
+          <motion.div variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }}>
+           <Button
+  asChild
+  size="lg"
+  className="relative group overflow-hidden bg-gradient-to-r from-blue-500 to-violet-500 hover:from-blue-400 hover:to-violet-400 text-white px-8 py-6 text-base shadow-2xl shadow-blue-500/30 transition-transform active:scale-[0.97] hover:scale-[1.04]"
+>
+  <Link href="/auth-redirect">
+    <span className="relative z-10 flex items-center gap-2">
+      Get Started
+      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+    </span>
+    <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+  </Link>
+</Button>
+          </motion.div>
+          <motion.div variants={{ hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { duration: 0.6 } } }}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white px-8 py-6 text-base backdrop-blur-sm transition-transform active:scale-[0.97] hover:scale-[1.04]"
+            >
+              <Play className="h-4 w-4 mr-2" /> Watch Demo
+            </Button>
+          </motion.div>
+        </motion.div>
 
-            <button className=" text-white px-6 py-3 rounded-full font-medium ">
-           <Link href="/auth-redirect" className="group flex items-center gap-4">
-  {/* The Icon Container */}
-  <div className="relative flex items-center justify-center">
-    {/* The Outer Offset Circle (Thin Red Line) */}
-    <div className="absolute h-12 w-12 rounded-full border border-red-500/50 scale-110" />
-    
-    {/* The Solid Red Circle with Arrow */}
-    <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-red-600 transition-transform group-hover:scale-105">
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        className="h-5 w-5 text-white" 
-        fill="none" 
-        viewBox="0 0 24 24" 
-        stroke="currentColor" 
-        strokeWidth={2}
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="Arrow-Right-Icon-Path-Here" />
-        {/* Simplified Arrow Path */}
-        <path d="M5 12h14m-7-7 7 7-7 7" />
-      </svg>
-    </div>
-  </div>
-
-  {/* The Text */}
-  <span className="text-xl font-bold text-slate-900">
-    Get Start 
-  </span>
-</Link>
-            </button>
-
-            <button className="text-gray-900">
-             <Link href="/sign-in" className="group flex items-center gap-4">
-  {/* The Icon Container */}
-  <div className="relative flex items-center justify-center">
-    {/* The Outer Offset Circle (Thin Red Line) */}
-    <div className="absolute h-12 w-12 rounded-full border border-red-500/60 scale-110" />
-    
-    {/* The Solid Red Circle with Play Triangle */}
-    {/* We use pl-1 (left padding) to visually center the play triangle, which can look unbalanced otherwise. */}
-    <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-red-600 pl-1 transition-transform group-hover:scale-105">
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="currentColor" // Use fill color instead of stroke
-        className="h-5 w-5 text-white"
-      >
-        {/* Simplified Play Triangle Path */}
-        <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 0 1 0 1.971l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" />
-      </svg>
-    </div>
-  </div>
-
-  {/* The Text (Kept from original design) */}
-  <span className="text-xl font-bold text-slate-950">
-    Watch Demo
-  </span>
-</Link>
-            </button>
-
-          </div>
-        </div>
-
-        {/* RIGHT IMAGE */}
-        <div className="absolute right-0 top-1/2 -translate-y-1/2 z-20">
-
-          <Image
-            src="/ai-head.png"
-            alt="AI Hiring Platform"
-            width={600}
-            height={700}
-            className="object-contain"
-            priority
-          />
-
-        </div>
-
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.7 }}
+          className="mx-auto mt-16 grid max-w-3xl grid-cols-3 gap-4 text-center"
+        >
+          {[
+            ['120K+', 'AI Interviews'],
+            ['4.9/5', 'Candidate Rating'],
+            ['3.2x', 'Faster Hires'],
+          ].map(([k, v]) => (
+            <div key={v} className="glass rounded-xl py-5">
+              <div className="text-2xl font-semibold gradient-text">{k}</div>
+              <div className="text-xs uppercase tracking-wider text-white/60 mt-1">{v}</div>
+            </div>
+          ))}
+        </motion.div>
       </div>
-
     </section>
-  );
+  )
 }

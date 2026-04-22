@@ -1,6 +1,6 @@
 "use client";
 
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 import { useRouter } from "next/navigation";
 
 export default function RecruiterProfile() {
@@ -14,7 +14,7 @@ export default function RecruiterProfile() {
       <div className="flex h-[calc(100vh-64px)]">
 
         {/* 🔹 SIDEBAR */}
-        <aside className="w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+       <aside className="fade-in w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
           <h2 className="text-xl font-bold text-blue-400 mb-8">
             Recruiter Panel
           </h2>
@@ -23,21 +23,21 @@ export default function RecruiterProfile() {
 
             <button
               onClick={() => router.push("/recruiter/")}
-              className="block w-full text-left hover:text-blue-400"
+                className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               ➕ Post New Job
             </button>
 
             <button
               onClick={() => router.push("/recruiter/jobs")}
-              className="block w-full text-left hover:text-blue-400"
+                className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               📋 Your Jobs
             </button>
 
             <button
               onClick={() => router.push("/recruiter/results")}
-              className="block w-full text-left hover:text-blue-400"
+                className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5"
             >
               📊 Candidate Results
             </button>

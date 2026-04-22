@@ -4,7 +4,7 @@ import { useState } from "react";
 import pdfToText from "react-pdftotext";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 
 export default function UploadPage() {
   const { user, isLoaded } = useUser();

@@ -1,20 +1,17 @@
 "use client";
-
+import { useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";  
+import { useRouter } from "next/navigation";  
+import Navbar from "@/components/Navbar";
+import Hero from '@/components/Hero'
+import Features from '@/components/Features'
+import HowItWorks from '@/components/HowItWorks'
+import JobsPreview from "@/components/JobsPreview";
 
-import { Header } from "@/components/Navbar";
-
-import Hero from "@/components/Hero";
-import Features from "@/components/Features";
-import { HowItWorks } from "@/components/HowItWorks";
-import Footer from "@/components/Footer";
-
-import AIThinking from "@/components/Ai-Thinkkings";
-import Logos from "@/components/Logos";
-
-import { WhyChoose } from "@/components/WhyChoose";
+import Testimonials from "@/components/Testimonials";
+import CTA from '@/components/CTA'
+import Footer from '@/components/Footer'
+import { motion } from 'framer-motion'
 
 export default function Page() {
 
@@ -34,31 +31,22 @@ export default function Page() {
   // ⛔ Prevent UI flash before redirect
   if (!isLoaded || isSignedIn) return null;
 
-  return (
-    <main className="min-h-screen">
-
-       <div className="min-h-screen flex flex-col">
-      {/* 🌟 Header */}
-      <Header/>
-
-      {/* 🧩 Main Content */}
-      <main className="flex-1">
-        <Hero />
-        <Logos/>
-        <Features />
-        <HowItWorks />
-        <AIThinking/>
-        <WhyChoose/>
-        
-      
-      </main>
-
-      {/* ⚓ Footer */}
+   return (
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      className="relative min-h-screen bg-[#05060f] text-white"
+    >
+      <Navbar />
+      <Hero />
+      <Features />
+      <HowItWorks />
+    
+      <Testimonials />
+      <CTA />
+     
       <Footer />
-    </div>
-
-
-
-    </main>
-  );
+    </motion.main>
+  )
 }

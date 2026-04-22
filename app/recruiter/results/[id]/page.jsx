@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 
 export default function ResultsPage() {
   const { id } = useParams();

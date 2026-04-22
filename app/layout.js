@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import Cursor from "@/components/Cursor";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -20,14 +21,20 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-    <body
-  className={`${geistSans.variable} ${geistMono.variable} antialiased 
-  bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white min-h-screen`}
->
-        <Header/>
-        <main className="bg-black min-h-screen container">{children}</main>
-        <Footer/>
+      <body className="bg-black text-white">
+        {/* Everything else goes in a wrapper */}
+        <div className="relative flex flex-col min-h-screen">
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+
+        {/* CURSOR AT THE ABSOLUTE BOTTOM 
+           Right before the body ends 
+        */}
+        <Cursor /> 
       </body>
     </html>
   );
 }
+

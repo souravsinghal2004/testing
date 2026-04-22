@@ -1,6 +1,6 @@
 
         import Footer from "@/components/Footer";
-import { Header } from "@/components/Navbar";
+import { Header } from "@/components/inside/Header";
 
 export default function AboutPage() {
   return (
