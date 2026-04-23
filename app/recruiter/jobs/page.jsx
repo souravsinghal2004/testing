@@ -62,8 +62,8 @@ export default function JobsPage() {
               ➕ Post New Job
             </button>
 
-            <button className="block w-full text-left text-blue-400">
-              📋 Your Jobs
+            <button className="block w-full  font-bold  fill-amber-400 text-2xl text-left  text-white/90 px-3 py-2 rounded-lg hover:bg-white/5   ">
+               Your Jobs
             </button>
 
             <button

@@ -23,10 +23,10 @@ export default function ProfilePage() {
 
     <div className="flex">
 
-     <aside className="fade-in w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
-        <h2 className="text-xl font-bold text-blue-400 mb-8">
-          Candidate Panel
-        </h2>
+      <aside className="fade-in w-64 bg-black/40 backdrop-blur-xl border-r border-white/10 px-6 py-8">
+          <h2 className="text-xl font-bold text-blue-400 mb-8">
+            Candidate Panel
+          </h2>
 
         <nav className="space-y-4">
           <button onClick={() => router.push("/login")} className="btn-animate overflow-hidden block w-full text-left px-3 py-2 rounded-lg hover:bg-white/5">
@@ -41,13 +41,13 @@ export default function ProfilePage() {
             🧠 Skill Feedback
           </button>
 
-          <button className="text-blue-400 font-semibold">
-            📄 Profile & Resume
+          <button      className="block w-full  font-bold  fill-amber-400 text-2xl text-left  text-white/90  py-2 rounded-lg hover:bg-white/5   ">
+            Profile & Resume
           </button>
         </nav>
       </aside>
 
-      <main className="flex-1 p-10">
+         <main className="flex-1 p-10 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-500">
 
         <h1 className="text-3xl font-bold text-blue-300 mb-6">
           Profile & Resume

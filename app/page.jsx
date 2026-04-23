@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";  
+
 import Navbar from "@/components/Navbar";
 import Hero from '@/components/Hero'
 import Features from '@/components/Features'

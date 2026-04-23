@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import * as faceapi from "face-api.js";
+import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { useSearchParams } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
@@ -22,6 +22,19 @@ export default function useLiveInterview() {
   const [processing, setProcessing] = useState(false);
   const [setupPopup, setSetupPopup] = useState(true);
   const [interviewEnded, setInterviewEnded] = useState(false);
+  const [alertText, setAlertText] = useState("");
+
+  const noFaceCounter = useRef(0);
+  const multiFaceCounter = useRef(0);
+  const lookAwayCounter = useRef(0);
+  const headAwayCount = useRef(0);
+  const gazeAwayCount = useRef(0);
+  const isHeadAway = useRef(false);
+  const isGazeAway = useRef(false);
+  const strikes = useRef(0);
+  const hasTriggeredStrike = useRef(false);
+  const landmarkerRef = useRef(null);
+  const lastVideoTimeRef = useRef(-1);
 
   const streamRef = useRef(null);
   const recorderRef = useRef(null);
@@ -107,6 +120,7 @@ export default function useLiveInterview() {
       });
 
       await initMedia();
+      await initMediaPipe();
       detectFace();
 
       await fetchJobDetails();
@@ -417,20 +431,140 @@ Please answer clearly and concisely.
 Let's begin with Question 1.`;
   }
 
+  async function initMediaPipe() {
+    try {
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+      );
+      landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `/face_landmarker.task`,
+          delegate: "GPU"
+        },
+        outputFaceBlendshapes: true,
+        runningMode: "VIDEO",
+        numFaces: 5
+      });
+      console.log("✅ MediaPipe Loaded");
+    } catch (e) {
+      console.error("MediaPipe failed to load", e);
+    }
+  }
+
+  function getGazeDirection(irisCenter, eyeCenter) {
+    const dx = irisCenter.x - eyeCenter.x;
+    const dy = irisCenter.y - eyeCenter.y;
+    if (dx < -0.005) return "LEFT";
+    if (dx > 0.005) return "RIGHT";
+    if (dy < -0.005) return "UP";
+    if (dy > 0.005) return "DOWN";
+    return "CENTER";
+  }
+
+  function getHeadDirection(nose, leftFace, rightFace) {
+    const midX = (leftFace.x + rightFace.x) / 2.0;
+    const faceBase = Math.abs(leftFace.x - rightFace.x);
+    if (nose.x < midX - faceBase * 0.1) return "RIGHT";
+    if (nose.x > midX + faceBase * 0.1) return "LEFT";
+    return "CENTER";
+  }
+
   async function detectFace() {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isInterviewStoppedRef.current) return;
+    
+    if (landmarkerRef.current && videoRef.current.readyState >= 2) {
+      const currentTime = videoRef.current.currentTime;
+      if (lastVideoTimeRef.current !== currentTime) {
+        lastVideoTimeRef.current = currentTime;
+        
+        try {
+          const results = landmarkerRef.current.detectForVideo(videoRef.current, performance.now());
+          handleDetections(results);
+        } catch (e) {}
+      }
+    }
+    
+    requestAnimationFrame(detectFace);
+  }
 
-    const detections = await faceapi.detectAllFaces(
-      videoRef.current,
-      new faceapi.TinyFaceDetectorOptions()
-    );
+  function handleDetections(results) {
+    let currentAlert = "";
 
-    if (videoContainerRef.current) {
-      videoContainerRef.current.style.border =
-        detections.length ? "5px solid green" : "5px solid red";
+    if (results.faceLandmarks.length === 0) {
+      noFaceCounter.current++;
+      if (noFaceCounter.current > 20) currentAlert = "Face Not Detected";
+    } else {
+      noFaceCounter.current = 0;
     }
 
-    requestAnimationFrame(detectFace);
+    if (results.faceLandmarks.length > 1) {
+      multiFaceCounter.current++;
+      if (multiFaceCounter.current > 5) currentAlert = "Cheating Detected - Interview Ended";
+    } else {
+      multiFaceCounter.current = 0;
+    }
+
+    if (results.faceLandmarks.length === 1 && !currentAlert) {
+      const landmarks = results.faceLandmarks[0];
+      
+      const nose = landmarks[1];
+      const leftFace = landmarks[234];
+      const rightFace = landmarks[454];
+
+      const leftEyeIndices = [33, 160, 158, 133, 153, 144];
+      const leftIrisIndices = [468, 469, 470, 471];
+
+      const leftEyeX = leftEyeIndices.reduce((sum, i) => sum + landmarks[i].x, 0) / 6;
+      const leftEyeY = leftEyeIndices.reduce((sum, i) => sum + landmarks[i].y, 0) / 6;
+
+      const leftIrisX = leftIrisIndices.reduce((sum, i) => sum + landmarks[i].x, 0) / 4;
+      const leftIrisY = leftIrisIndices.reduce((sum, i) => sum + landmarks[i].y, 0) / 4;
+
+      const gaze = getGazeDirection({x: leftIrisX, y: leftIrisY}, {x: leftEyeX, y: leftEyeY});
+      const head = getHeadDirection(nose, leftFace, rightFace);
+
+      if (head !== "CENTER") {
+        if (!isHeadAway.current) {
+          isHeadAway.current = true;
+          headAwayCount.current++;
+        }
+      } else {
+        isHeadAway.current = false;
+      }
+
+      if (gaze !== "CENTER") {
+        if (!isGazeAway.current) {
+          isGazeAway.current = true;
+          gazeAwayCount.current++;
+        }
+      } else {
+        isGazeAway.current = false;
+      }
+
+      if (head !== "CENTER" || gaze !== "CENTER") {
+        lookAwayCounter.current++;
+        if (lookAwayCounter.current > 15) {
+          if (!hasTriggeredStrike.current) {
+            strikes.current++;
+            hasTriggeredStrike.current = true;
+          }
+          if (strikes.current >= 3) {
+            currentAlert = "Cheating Detected - Interview Ended";
+          } else {
+            currentAlert = `Warning ${strikes.current}/3: Please look at the screen (Anti-Cheat)`;
+          }
+        }
+      } else {
+        lookAwayCounter.current = 0;
+        hasTriggeredStrike.current = false;
+      }
+    }
+
+    setAlertText(currentAlert);
+    
+    if (videoContainerRef.current) {
+      videoContainerRef.current.style.border = currentAlert ? "5px solid red" : "2px solid #555";
+    }
   }
 
   function cleanAIResponse(text) {
@@ -494,7 +628,9 @@ Let's begin with Question 1.`;
         jobTitle: title,
         candidateName,
         userId: user?.id,
-        jobId
+        jobId,
+        headLookawayCount: headAwayCount.current,
+        gazeLookawayCount: gazeAwayCount.current
       })
     });
 
@@ -517,6 +653,7 @@ Let's begin with Question 1.`;
     interviewEnded,
     generateReport,
     jobId,
-    endInterviewManually
+    endInterviewManually,
+    alertText
   };
 }

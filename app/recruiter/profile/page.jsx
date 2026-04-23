@@ -44,9 +44,9 @@ export default function RecruiterProfile() {
 
             {/* ✅ ACTIVE */}
             <button
-              className="block w-full text-left font-semibold text-blue-400"
+             className="block w-full  font-bold  fill-amber-400 text-2xl text-left  text-white/90 px-3 py-2 rounded-lg hover:bg-white/5   "
             >
-              👤 Profile
+               Profile
             </button>
 
           </nav>

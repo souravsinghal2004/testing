@@ -1,6 +1,7 @@
 'use client'
 import { motion } from 'framer-motion'
 import { Sparkles, Github, Twitter, Linkedin, Youtube } from 'lucide-react'
+import Link from 'next/link'
 
 const links = [
   { label: 'About', href: '#' },
@@ -28,10 +29,21 @@ export default function Footer() {
       >
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-violet-500 grid place-items-center glow-blue">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-semibold">AI Job <span className="gradient-text">Portal</span></span>
+           
+            {/* --- LOGO (Now Flex instead of Absolute for better alignment) --- */}
+        <Link href="/" className="flex items-center gap-2.5 group cursor-pointer">
+          <div className="relative h-10 w-10 flex items-center justify-center rounded-xl bg-gray-950 border border-white/10 group-hover:border-blue-500/40 transition-colors duration-300">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 opacity-0 group-hover:opacity-20 blur-sm transition-opacity duration-500" />
+            <span className="relative text-2xl font-extrabold text-white leading-none tracking-tight">
+              H
+              <span className="absolute -bottom-1 right-0 h-1 w-3 bg-blue-400 rounded-full group-hover:bg-violet-400 transition-colors" />
+            </span>
+          </div>
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-xl font-bold text-white tracking-tight">Hire</span>
+            <span className="text-xl font-light text-white/70 tracking-tight">Byte</span>
+          </div>
+        </Link>
           </div>
 
           <nav className="flex items-center gap-7 text-sm text-white/60">
@@ -66,7 +78,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-10 pt-8 border-t border-white/5 text-center text-xs text-white/40">
-          © {new Date().getFullYear()} AI Job Portal. Crafted with care.
+          © {new Date().getFullYear()} Hire Byte. Crafted with care.
         </div>
       </motion.div>
     </footer>

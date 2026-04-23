@@ -65,8 +65,8 @@ export default function FeedbackPage() {
               📊 Interview Results
             </button>
 
-            <button className="block w-full text-left font-semibold text-blue-400">
-              🧠 Skill Feedback
+            <button      className="block w-full  font-bold  fill-amber-400 text-2xl text-left  text-white/90  py-2 rounded-lg hover:bg-white/5   ">
+               Skill Feedback
             </button>
 
             <button

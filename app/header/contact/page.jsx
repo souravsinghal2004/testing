@@ -9,7 +9,7 @@ import { Mail, MessageSquare, MapPin, Phone, Send, CheckCircle2 } from 'lucide-r
 import { Button } from '@/components/ui/button'
 
 const channels = [
-  { icon: Mail, title: 'Email', value: 'hello@aijobportal.com', desc: 'We reply within a business day.' },
+  { icon: Mail, title: 'Email', value: 'contact@hirebyte.com', desc: 'We reply within a business day.' },
   { icon: MessageSquare, title: 'Live chat', value: 'Chat with us', desc: 'Mon–Fri, 9am – 6pm IST.' },
   { icon: Phone, title: 'Phone', value: '+1 (415) 555-0123', desc: 'For urgent enterprise issues.' },
 ]
