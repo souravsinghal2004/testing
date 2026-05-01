@@ -25,37 +25,33 @@ export default function LiveUI({
   const hasGeneratedRef = useRef(false);
   const lockRef = useRef(false);
 
-  const shutdownInterview = async () => {
-    try {
-      const stream =
-        videoRef?.current?.srcObject ||
-        window.__INTERVIEW_STREAM__ ||
-        streamRef.current;
-
-      if (stream) {
-        const tracks = stream.getTracks();
-        tracks.forEach((track) => {
-          track.stop();
-          track.enabled = false;
-        });
-      }
-
-      if (videoRef?.current) {
-        videoRef.current.pause();
-        videoRef.current.srcObject = null;
-        videoRef.current.innerHTML = "";
-        videoRef.current.load();
-      }
-
-      window.__INTERVIEW_STREAM__ = null;
-
-      if (document.fullscreenElement) {
-        await document.exitFullscreen().catch(() => {});
-      }
-    } catch (err) {
-      console.error("Shutdown Error:", err);
+const shutdownInterview = async () => {
+  try {
+    // 1. Pehle tracks ko stop karne ki koshish karo
+    const stream = window.__INTERVIEW_STREAM__ || videoRef?.current?.srcObject;
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
     }
-  };
+
+    // 2. Global reference kill karo
+    window.__INTERVIEW_STREAM__ = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+
+    // 3. Sabse important: Browser ko force karo page reload karne ke liye
+    // Hum dashboard ka URL as a parameter bhej denge
+    const dashboardUrl = `/login/dashboard/${jobId}`;
+    
+    // Thoda sa delay (500ms) taaki stop() command execute ho jaye
+    setTimeout(() => {
+      window.location.href = dashboardUrl; // Ye page ko hard-reload karke waha le jayega
+    }, 500);
+
+  } catch (err) {
+    console.error("Shutdown Error:", err);
+    // Agar kuch phata toh bhi bhag jao yahan se
+    window.location.href = "/login";
+  }
+};
 
   useEffect(() => {
     if (showEndPopup) shutdownInterview();
@@ -91,40 +87,40 @@ export default function LiveUI({
     if (alertText === "Cheating Detected - Interview Ended") triggerEndInterview();
   }, [alertText]);
 
-  useEffect(() => {
-    if (!interviewEnded || hasGeneratedRef.current) return;
-    
-    // 1. Immediately lock and show UI to give instant feedback
-    hasGeneratedRef.current = true;
-    lockRef.current = true;
-    setShowEndPopup(true); 
-    
-    // 2. Shut down hardware immediately
-    shutdownInterview();
+useEffect(() => {
+  if (!interviewEnded || hasGeneratedRef.current) return;
+  
+  hasGeneratedRef.current = true;
+  lockRef.current = true;
+  setShowEndPopup(true); 
 
-    const handleGenerate = async () => {
-      try {
-        // 3. Start the heavy lifting in the background
-        await generateReport();
-      } catch (e) {
-        console.error("Report Generation Failed", e);
-      } finally {
-        // 4. Navigate only after the report is done
-        // We use a small delay so the user sees the "Processing" state
-        setTimeout(() => router.push(`/login/dashboard/${jobId}`), 1000);
-      }
-    };
-
-    handleGenerate();
-  }, [interviewEnded, jobId, router, generateReport]); // Added missing dependencies
-
-  useEffect(() => {
-    if (showEndPopup && isManualEnd && countdown > 0) {
-      const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
-      return () => clearTimeout(timer);
+  const handleGenerate = async () => {
+    try {
+      // 1. Report generate karo (Background mein)
+      await generateReport();
+      
+      // 2. Report banne ke baad hardware kill aur page redirect ek saath
+      shutdownInterview(); 
+      
+    } catch (e) {
+      console.error("Failed", e);
+      shutdownInterview(); // Error aaye tab bhi hardware bnd karo
     }
-    if (countdown === 0 && isManualEnd) router.push("/login");
-  }, [showEndPopup, countdown, isManualEnd]);
+  };
+
+  handleGenerate();
+}, [interviewEnded, jobId, generateReport]);
+
+ useEffect(() => {
+  if (showEndPopup && isManualEnd && countdown > 0) {
+    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }
+  // Countdown khatam hote hi Hard Reload
+  if (countdown === 0 && isManualEnd) {
+    window.location.href = "/login"; 
+  }
+}, [showEndPopup, countdown, isManualEnd]);
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#020617] text-slate-100 flex flex-col font-sans relative">
@@ -240,14 +236,16 @@ export default function LiveUI({
             <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-blue-500/30 m-6 rounded-tl-xl z-20 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-blue-500/30 m-6 rounded-br-xl z-20 pointer-events-none" />
 
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              // CHANGED: Added bg-[#020617] directly to video and ensured it fills the space perfectly
-              className="absolute inset-0 w-full h-full object-cover bg-[#020617] scale-x-[-1] opacity-90 transition-opacity duration-700 group-hover:opacity-100"
-            />
+           <video
+  ref={videoRef}
+  autoPlay
+  muted
+  playsInline
+  // showEndPopup aate hi video ko black kar do
+  className={`absolute inset-0 w-full h-full object-cover bg-black scale-x-[-1] transition-opacity duration-500 ${
+    showEndPopup ? "opacity-0" : "opacity-90"
+  }`}
+/>
           </div>
 
           {/* CONTROL BOX */}
@@ -267,49 +265,86 @@ export default function LiveUI({
         </div>
       </main>
 
-      <AnimatePresence>
-        {showEndPopup && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center overflow-hidden"
-          >
-            <div className="absolute inset-0 pointer-events-none">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(37,99,235,0.08)_0%,_transparent_70%)]" />
-              <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
-            </div>
+<AnimatePresence>
+  {showEndPopup && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      // Full screen dark overlay with blur
+      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        // The actual Card UI
+        className="relative w-full max-w-lg bg-[#0f172a]/90 border border-white/10 p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+      >
+        {/* Background Sparkle inside card */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="relative w-32 h-32 mb-12">
-                <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="absolute inset-0 border-t-2 border-b-2 border-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
-                <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }} className="absolute inset-3 border-l-2 border-r-2 border-indigo-500/40 rounded-full" />
-                <motion.div animate={{ scale: [1, 1.25, 1], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="absolute inset-8 bg-blue-500 rounded-full flex items-center justify-center" >
-                  <div className="w-2 h-2 bg-white rounded-full" />
-                </motion.div>
-              </div>
+        <div className="relative z-10 flex flex-col items-center text-center">
+          {/* Animated Spinner (Same for both) */}
+          <div className="relative w-24 h-24 mb-8">
+            <motion.div 
+              animate={{ rotate: 360 }} 
+              transition={{ repeat: Infinity, duration: 2, ease: "linear" }} 
+              className={`absolute inset-0 border-t-2 border-b-2 rounded-full ${isManualEnd ? 'border-red-500' : 'border-blue-500'}`} 
+            />
+            <motion.div 
+              animate={{ rotate: -360 }} 
+              transition={{ repeat: Infinity, duration: 4, ease: "linear" }} 
+              className="absolute inset-3 border-l-2 border-r-2 border-white/10 rounded-full" 
+            />
+            <motion.div 
+              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} 
+              transition={{ repeat: Infinity, duration: 2 }} 
+              className={`absolute inset-8 rounded-full ${isManualEnd ? 'bg-red-500' : 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]'}`}
+            />
+          </div>
 
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center">
-                <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-4 italic">
-                  {isManualEnd ? "Assessment Interrupted" : "Processing Neural Markers"}
-                </h2>
-                <div className="flex items-center justify-center gap-3 mb-8">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
-                  <p className="text-blue-400 font-mono text-[10px] uppercase tracking-[0.4em]">
-                    {isManualEnd ? "Security_Protocol_Active" : "AI_Synthesis_In_Progress"}
-                  </p>
+          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2 italic">
+            {isManualEnd ? "Session Terminated" : "Processing Results"}
+          </h2>
+          
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className={`w-1.5 h-1.5 rounded-full animate-ping ${isManualEnd ? 'bg-red-500' : 'bg-blue-500'}`} />
+            <p className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.3em]">
+              {isManualEnd ? "Security_Protocol_Applied" : "AI_Neural_Synthesis"}
+            </p>
+          </div>
+
+          <div className="w-full bg-white/5 p-6 rounded-2xl border border-white/5 backdrop-blur-sm">
+            {isManualEnd ? (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  The interview was stopped due to a policy violation or manual exit.
+                </p>
+                <div className="pt-2">
+                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1">Redirecting to Dashboard</span>
+                  <div className="text-5xl font-black text-red-500 font-mono italic">0{countdown}</div>
                 </div>
-                {isManualEnd && (
-                  <div className="flex flex-col items-center">
-                    <span className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-bold">Redirecting...</span>
-                    <div className="text-7xl font-black text-blue-500 font-mono tracking-tighter">0{countdown}</div>
-                  </div>
-                )}
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Please wait while our AI analyzes your performance and generates the final report.
+                </p>
+                <div className="flex justify-center gap-1">
+                  <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1 h-1 bg-blue-400 rounded-full" />
+                  <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1 h-1 bg-blue-400 rounded-full" />
+                  <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1 h-1 bg-blue-400 rounded-full" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       <footer className="h-6" />
     </div>
