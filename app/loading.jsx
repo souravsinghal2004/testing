@@ -1,6 +1,6 @@
 export default function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+    <div className="min-h-screen flex items-center justify-center              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
 
       <div className="bg-white/5 backdrop-blur-xl border border-white/10 px-10 py-8 rounded-2xl text-center shadow-xl">
 

@@ -36,7 +36,7 @@ export default function ResultsPage() {
   }, [id]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+    <div className="min-h-screen              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
 
       <Header />
 

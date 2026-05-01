@@ -25,33 +25,30 @@ export default function LiveUI({
   const hasGeneratedRef = useRef(false);
   const lockRef = useRef(false);
 
-  // --- 1. THE KILL SWITCH (CAMERA OFF FIX) ---
   const shutdownInterview = async () => {
     try {
-      // Access the stream from multiple potential sources
-      const stream = 
-        videoRef?.current?.srcObject || 
-        window.__INTERVIEW_STREAM__ || 
+      const stream =
+        videoRef?.current?.srcObject ||
+        window.__INTERVIEW_STREAM__ ||
         streamRef.current;
 
       if (stream) {
         const tracks = stream.getTracks();
         tracks.forEach((track) => {
-          track.stop(); // Stop hardware
-          track.enabled = false; // Disable track
+          track.stop();
+          track.enabled = false;
         });
       }
 
-      // Force the video element to drop the hardware link
       if (videoRef?.current) {
         videoRef.current.pause();
         videoRef.current.srcObject = null;
-        videoRef.current.innerHTML = ""; // Clear internal state
-        videoRef.current.load(); // Force reset browser media pipeline
+        videoRef.current.innerHTML = "";
+        videoRef.current.load();
       }
 
       window.__INTERVIEW_STREAM__ = null;
-      
+
       if (document.fullscreenElement) {
         await document.exitFullscreen().catch(() => {});
       }
@@ -60,14 +57,10 @@ export default function LiveUI({
     }
   };
 
-  // Trigger shutdown immediately when popup shows
   useEffect(() => {
-    if (showEndPopup) {
-      shutdownInterview();
-    }
+    if (showEndPopup) shutdownInterview();
   }, [showEndPopup]);
 
-  // --- 2. LOGIC HANDLERS ---
   const triggerEndInterview = async () => {
     if (lockRef.current) return;
     lockRef.current = true;
@@ -83,7 +76,7 @@ export default function LiveUI({
     const handleVisibility = () => { if (document.hidden) triggerEndInterview(); };
     const handleBlur = () => triggerEndInterview();
     const handleFsChange = () => { if (!document.fullscreenElement) triggerEndInterview(); };
-    
+
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("blur", handleBlur);
     document.addEventListener("fullscreenchange", handleFsChange);
@@ -100,16 +93,30 @@ export default function LiveUI({
 
   useEffect(() => {
     if (!interviewEnded || hasGeneratedRef.current) return;
+    
+    // 1. Immediately lock and show UI to give instant feedback
     hasGeneratedRef.current = true;
     lockRef.current = true;
+    setShowEndPopup(true); 
+    
+    // 2. Shut down hardware immediately
     shutdownInterview();
-    setShowEndPopup(true);
+
     const handleGenerate = async () => {
-      try { await generateReport(); } catch (e) {}
-      setTimeout(() => router.push(`/login/dashboard/${jobId}`), 1500);
+      try {
+        // 3. Start the heavy lifting in the background
+        await generateReport();
+      } catch (e) {
+        console.error("Report Generation Failed", e);
+      } finally {
+        // 4. Navigate only after the report is done
+        // We use a small delay so the user sees the "Processing" state
+        setTimeout(() => router.push(`/login/dashboard/${jobId}`), 1000);
+      }
     };
+
     handleGenerate();
-  }, [interviewEnded]);
+  }, [interviewEnded, jobId, router, generateReport]); // Added missing dependencies
 
   useEffect(() => {
     if (showEndPopup && isManualEnd && countdown > 0) {
@@ -121,14 +128,12 @@ export default function LiveUI({
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#020617] text-slate-100 flex flex-col font-sans relative">
-      
-      {/* 🌌 Background Ambience */}
+      {/* Background Gradients */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full" />
       </div>
 
-      {/* HEADER HUD */}
       <header className="relative z-10 px-8 py-6 flex justify-between items-center border-b border-white/5 bg-black/20 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_red]" />
@@ -144,7 +149,7 @@ export default function LiveUI({
             <span className="text-xs text-blue-400 font-mono">Active_Monitoring_v2.4</span>
           </div>
           <div className="h-8 w-px bg-white/10" />
-          <button 
+          <button
             onClick={triggerEndInterview}
             className="text-[10px] font-bold border border-red-500/50 text-red-500 px-4 py-2 rounded-full hover:bg-red-500 hover:text-white transition-all duration-300 uppercase tracking-tighter"
           >
@@ -153,13 +158,11 @@ export default function LiveUI({
         </div>
       </header>
 
-      {/* MAIN VIEWPORT */}
       <main className="relative z-10 flex flex-1 p-6 gap-6 overflow-hidden">
-        
         {/* LEFT: INTERACTION HUB */}
         <div className="w-1/2 flex flex-col justify-between py-4">
           <div className="space-y-6">
-            <motion.div 
+            <motion.div
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               className="p-6 rounded-3xl bg-white/[0.03] border border-white/5 backdrop-blur-xl"
@@ -211,12 +214,12 @@ export default function LiveUI({
         <div className="w-1/2 flex flex-col gap-6">
           <div
             ref={videoContainerRef}
-            className="relative flex-1 rounded-[2.5rem] overflow-hidden border border-white/10 bg-black group shadow-2xl"
+            // CHANGED: Removed 'border' and 'border-transparent' classes to kill the white outline
+            className="relative flex-1 overflow-hidden rounded-[2.5rem] bg-[#020617] group shadow-2xl"
           >
-            {/* 🛡️ NEW UPDATED SLEEK WARNING HUD */}
             <AnimatePresence>
               {alertText && (
-                <motion.div 
+                <motion.div
                   initial={{ y: -50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -50, opacity: 0 }}
@@ -233,17 +236,17 @@ export default function LiveUI({
               )}
             </AnimatePresence>
 
-            {/* HUD Overlay Elements */}
-            <div className="absolute inset-0 z-10 pointer-events-none border-[30px] border-transparent group-hover:border-blue-500/5 transition-all duration-700" />
-            <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-blue-500/30 m-6 rounded-tl-xl" />
-            <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-blue-500/30 m-6 rounded-br-xl" />
+            {/* Corner Brackets */}
+            <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-blue-500/30 m-6 rounded-tl-xl z-20 pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-blue-500/30 m-6 rounded-br-xl z-20 pointer-events-none" />
 
             <video
               ref={videoRef}
               autoPlay
               muted
               playsInline
-              className="w-full h-full object-cover scale-x-[-1] opacity-90 transition-opacity duration-700 group-hover:opacity-100"
+              // CHANGED: Added bg-[#020617] directly to video and ensured it fills the space perfectly
+              className="absolute inset-0 w-full h-full object-cover bg-[#020617] scale-x-[-1] opacity-90 transition-opacity duration-700 group-hover:opacity-100"
             />
           </div>
 
@@ -264,7 +267,6 @@ export default function LiveUI({
         </div>
       </main>
 
-      {/* 🧠 FULL-SCREEN ASSESSMENT OVERLAY */}
       <AnimatePresence>
         {showEndPopup && (
           <motion.div
@@ -273,7 +275,6 @@ export default function LiveUI({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center overflow-hidden"
           >
-            {/* Background elements same as original */}
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_rgba(37,99,235,0.08)_0%,_transparent_70%)]" />
               <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px]" />
@@ -284,48 +285,27 @@ export default function LiveUI({
                 <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }} className="absolute inset-0 border-t-2 border-b-2 border-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.3)]" />
                 <motion.div animate={{ rotate: -360 }} transition={{ repeat: Infinity, duration: 4, ease: "linear" }} className="absolute inset-3 border-l-2 border-r-2 border-indigo-500/40 rounded-full" />
                 <motion.div animate={{ scale: [1, 1.25, 1], opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="absolute inset-8 bg-blue-500 rounded-full flex items-center justify-center" >
-                   <div className="w-2 h-2 bg-white rounded-full" />
+                  <div className="w-2 h-2 bg-white rounded-full" />
                 </motion.div>
-                <motion.div animate={{ translateY: [-60, 60, -60] }} transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }} className="absolute left-[-20%] right-[-20%] top-1/2 h-[1px] bg-gradient-to-r from-transparent via-blue-400 to-transparent z-20" />
               </div>
 
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center" >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-center">
                 <h2 className="text-4xl font-black text-white uppercase tracking-tighter mb-4 italic">
                   {isManualEnd ? "Assessment Interrupted" : "Processing Neural Markers"}
                 </h2>
-                
                 <div className="flex items-center justify-center gap-3 mb-8">
                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />
                   <p className="text-blue-400 font-mono text-[10px] uppercase tracking-[0.4em]">
                     {isManualEnd ? "Security_Protocol_Active" : "AI_Synthesis_In_Progress"}
                   </p>
                 </div>
-
-                {!isManualEnd ? (
-                  <div className="w-64 h-1 bg-white/5 rounded-full mx-auto relative overflow-hidden">
-                    <motion.div initial={{ left: "-100%" }} animate={{ left: "100%" }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-                  </div>
-                ) : (
+                {isManualEnd && (
                   <div className="flex flex-col items-center">
                     <span className="text-[10px] text-slate-500 uppercase tracking-widest mb-2 font-bold">Redirecting...</span>
-                    <div className="text-7xl font-black text-blue-500 font-mono tracking-tighter">
-                      0{countdown}
-                    </div>
+                    <div className="text-7xl font-black text-blue-500 font-mono tracking-tighter">0{countdown}</div>
                   </div>
                 )}
               </motion.div>
-            </div>
-
-            <div className="absolute bottom-10 left-10 right-10 flex justify-between items-end">
-              <div className="font-mono text-[8px] text-slate-700 space-y-1">
-                <p>DATA_STREAM_CAPTURED: 100%</p>
-                <p>CAMERA_FEED: <span className="text-red-500">TERMINATED</span></p>
-                <p>GAZE_COORDINATES: LOGGED</p>
-              </div>
-              <div className="font-mono text-[8px] text-slate-700 text-right space-y-1">
-                <p>SYSTEM_ID: NEXT_GEN_AI_V4</p>
-                <p>STAMP: {new Date().toLocaleTimeString()}</p>
-              </div>
             </div>
           </motion.div>
         )}

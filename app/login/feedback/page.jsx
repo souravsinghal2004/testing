@@ -40,7 +40,7 @@ export default function FeedbackPage() {
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-    <div className="h-screen overflow-hidden bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+    <div className="h-screen overflow-hidden              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
      <Header />
    
      <div className="flex h-[calc(100vh-64px)]"> 

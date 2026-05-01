@@ -68,7 +68,7 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white py-12 px-6">
+    <div className="min-h-screen              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white py-12 px-6">
 
       <div className="max-w-4xl mx-auto rounded-3xl bg-gradient-to-r from-black via-blue-900 to-blue-500 p-[1px] shadow-xl">
 

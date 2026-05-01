@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Home, BarChart3, MessageSquare, ClipboardCheck, BrainCircuit, TrendingUp, Award } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { 
+  Home, 
+  BarChart3, 
+  MessageSquare, 
+  ClipboardCheck, 
+  BrainCircuit, 
+  TrendingUp, 
+  Award 
+} from "lucide-react";
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, 
   AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid 
@@ -10,25 +19,31 @@ import {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [tab, setTab] = useState("analytics");
-  const [data, setData] = useState(null);
+  const { id: jobId } = useParams();
+  const { user, isLoaded } = useUser();
 
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("analytics");
+
+  // --- LOGIC: KEPT EXACTLY AS PER YOUR FIRST SNIPPET ---
   useEffect(() => {
+    if (!isLoaded || !user || !jobId) return;
     const fetchReport = async () => {
       try {
-        const res = await fetch("/api/report");
+        const res = await fetch(`/api/loggedinuserreport?userId=${user.id}&jobId=${jobId}`);
         const reports = await res.json();
-        if (reports && reports.length > 0) {
-          setData(reports[0]);
-        }
+        if (reports?.length > 0) setData(reports[0]);
+        setLoading(false);
       } catch (err) {
         console.error("Fetch error:", err);
+        setLoading(false);
       }
     };
     fetchReport();
-  }, []);
+  }, [user, isLoaded, jobId]);
 
-  if (!data) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -36,20 +51,21 @@ export default function DashboardPage() {
     );
   }
 
-  const getColor = (value) => {
-    if (value <= 5) return "#f43f5e"; // Rose 500
-    if (value <= 7.5) return "#f59e0b"; // Amber 500
-    return "#10b981"; // Emerald 500
-  };
+  if (!data) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center text-red-500">
+        No report found
+      </div>
+    );
+  }
 
-  // Transform data for Radar Chart
+  // --- DATA TRANSFORMATIONS FOR CHARTS ---
   const radarData = Object.entries(data.scores || {}).map(([key, value]) => ({
     subject: key.replaceAll("_", " "),
     A: value * 10,
     fullMark: 100,
   }));
 
-  // Transform data for Area Chart (Question performance)
   const chartData = data.questionAnalysis?.map((q, i) => ({
     name: `Q${i + 1}`,
     score: q.score * 10,
@@ -57,6 +73,12 @@ export default function DashboardPage() {
 
   const overallScore = (Object.values(data.scores || {}).reduce((a, b) => a + b, 0) / 
                        Object.values(data.scores || {}).length) * 10;
+
+  const conversation = data.qa?.map((item) => ({
+    question: item.question,
+    userAnswer: item.answer,
+    aiFeedback: data.questionAnalysis?.find(q => q.question === item.question)?.feedback 
+  })) || [];
 
   const NavButton = ({ id, label, icon: Icon }) => (
     <button
@@ -86,10 +108,10 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center gap-2 text-blue-400 mb-2">
               <BrainCircuit size={20} />
-              <span className="text-sm font-semibold tracking-widest uppercase">Intelligence Report</span>
+              <span className="text-sm font-semibold tracking-widest uppercase">Hire Byte Report</span>
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-white">
-              Candidate <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Analysis</span>
+              {data.candidateName || "Candidate"} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Analysis</span>
             </h1>
           </div>
           
@@ -103,7 +125,6 @@ export default function DashboardPage() {
         {/* --- ANALYTICS TAB --- */}
         {tab === "analytics" && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            {/* Top Stats */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Radar Chart Card */}
               <div className="lg:col-span-2 bg-slate-900/50 backdrop-blur-xl border border-white/10 p-8 rounded-[32px] overflow-hidden">
@@ -147,18 +168,18 @@ export default function DashboardPage() {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <span className="text-4xl font-black text-white">{overallScore.toFixed(0)}%</span>
-                      <span className="text-xs text-slate-400 uppercase tracking-tighter">Match Score</span>
+                      <span className="text-xs text-slate-400 uppercase tracking-tighter">Overall Score</span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Overall Proficiency</h3>
-                  <p className="text-slate-400 text-sm px-4">Based on weighted average of technical and communication metrics.</p>
+                  <h3 className="text-xl font-bold mb-2">Match Proficiency</h3>
+                  <p className="text-slate-400 text-sm px-4">Performance across all technical and behavioral modules.</p>
                 </div>
               </div>
             </div>
 
             {/* Performance Timeline */}
             <div className="bg-slate-900/50 backdrop-blur-xl border border-white/10 p-8 rounded-[32px]">
-              <h2 className="text-xl font-bold mb-8">Performance Progression</h2>
+              <h2 className="text-xl font-bold mb-8">Question Performance Breakdown</h2>
               <div className="h-[250px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
@@ -183,28 +204,29 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* --- CONVERSATION TAB --- */}
+        {/* --- TRANSCRIPT (CONVERSATION) TAB --- */}
         {tab === "conversation" && (
           <div className="grid gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
-            {data.questionAnalysis?.map((item, index) => (
+            {conversation.map((item, index) => (
               <div key={index} className="group relative bg-slate-900/40 hover:bg-slate-900/60 transition-all border border-white/5 p-8 rounded-[24px]">
                 <div className="flex items-start gap-4">
                   <div className="h-10 w-10 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 font-bold border border-blue-500/20">
-                    {index + 1}
+                    Q{index + 1}
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-4 w-full">
                     <h3 className="text-lg font-bold text-white group-hover:text-blue-300 transition-colors">
                       {item.question}
                     </h3>
-                    <div className="relative pl-4 border-l-2 border-slate-700">
-                       <p className="text-slate-400 leading-relaxed italic">"{item.feedback}"</p>
+                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Candidate Response</p>
+                      <p className="text-slate-300 leading-relaxed italic">"{item.userAnswer}"</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                       <span className="text-[10px] uppercase tracking-widest text-slate-500">Score Impact</span>
-                       <div className="h-1 w-24 bg-white/5 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500" style={{ width: `${item.score * 10}%` }} />
-                       </div>
-                    </div>
+                    {item.aiFeedback && (
+                      <div className="pl-4 border-l-2 border-emerald-500/30">
+                        <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">AI Evaluation</p>
+                        <p className="text-slate-400 text-sm leading-relaxed">{item.aiFeedback}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -212,7 +234,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* --- SUMMARY TAB --- */}
+        {/* --- SUMMARY (VERDICT) TAB --- */}
         {tab === "summary" && (
           <div className="space-y-8 animate-in zoom-in-95 duration-500">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -232,7 +254,7 @@ export default function DashboardPage() {
                 </ul>
               </div>
 
-              {/* Weaknesses */}
+              {/* Improvements (Weaknesses) */}
               <div className="bg-rose-500/5 border border-rose-500/20 p-8 rounded-[32px]">
                 <div className="flex items-center gap-3 text-rose-400 mb-6">
                   <div className="p-2 bg-rose-500/10 rounded-lg"><TrendingUp size={24} className="rotate-180" /></div>
@@ -257,7 +279,7 @@ export default function DashboardPage() {
                   {data.summary}
                 </p>
                 <div className="inline-flex flex-col items-center">
-                  <span className="text-xs text-slate-500 uppercase tracking-widest mb-3">Hiring Recommendation</span>
+                  <span className="text-xs text-slate-500 uppercase tracking-widest mb-3">Decision Verdict</span>
                   <div className={`px-12 py-4 rounded-2xl text-2xl font-black tracking-tighter uppercase transition-all shadow-2xl ${
                     data.hire_recommendation === "Hire" 
                     ? "bg-emerald-500 text-white shadow-emerald-500/20" 
@@ -267,7 +289,6 @@ export default function DashboardPage() {
                   </div>
                 </div>
                </div>
-               {/* Decorative Gradient for the verdict card */}
                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-blue-500/5 blur-[100px] pointer-events-none" />
             </div>
           </div>
@@ -276,10 +297,10 @@ export default function DashboardPage() {
         {/* Floating Home Button */}
         <div className="fixed bottom-10 right-10 z-50">
           <button
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/")}
             className="group flex items-center gap-2 bg-white text-black pl-6 pr-5 py-4 rounded-full font-bold shadow-[0_20px_40px_rgba(0,0,0,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
-            Go Back
+            Go Home
             <div className="bg-black text-white p-2 rounded-full group-hover:rotate-12 transition-transform">
                 <Home size={18} />
             </div>

@@ -8,7 +8,7 @@ export async function POST(req) {
 
     const { clerkId, name, email } = await req.json();
 
-    console.log("🔥 SAVE USER:", clerkId);
+    console.log(" SAVE USER:", clerkId);
 
     const result = await User.updateOne(
       { clerkId },
@@ -18,18 +18,18 @@ export async function POST(req) {
           email,
         },
         $setOnInsert: {
-          role: "CANDIDATE", // ✅ only first time
+          role: "CANDIDATE", 
         },
       },
       { upsert: true }
     );
 
-    console.log("🛠️ UPDATE RESULT:", result);
+    console.log(" UPDATE RESULT:", result);
 
     return NextResponse.json({ success: true });
 
   } catch (err) {
-    console.log("❌ ERROR:", err);
+    console.log(" ERROR:", err);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

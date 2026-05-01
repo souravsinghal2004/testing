@@ -45,7 +45,7 @@ export default function DashboardPage() {
   })) || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white p-6 pb-24">
+    <div className="min-h-screen              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white p-6 pb-24">
       
       {/* HEADER */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -71,103 +71,120 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {tab === "analytics" && (
-        <div className="max-w-6xl mx-auto space-y-6">
-          
-          {/* 1. TOP ROW: FINAL VERDICT & OVERALL SCORE */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem] flex flex-col justify-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-10">
-                <Trophy size={120} />
-              </div>
-              <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Final Recommendation</p>
-              <h2 className={`text-5xl font-black mb-4 ${data.hire_recommendation === "Hire" ? "text-emerald-400" : "text-rose-500"}`}>
-                {data.hire_recommendation === "Hire" ? "PROCEED" : "No Hire"}
-              </h2>
-              <p className="text-gray-300 italic text-lg leading-relaxed border-l-2 border-blue-500/50 pl-4">
-                "{data.summary}"
-              </p>
+     {tab === "analytics" && (
+  <div className="max-w-5xl mx-auto space-y-6">
+
+    {/* TOP: SCORE + VERDICT */}
+    <div className="grid md:grid-cols-2 gap-6">
+      
+      <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
+        <p className="text-sm text-gray-400 mb-2">Final Decision</p>
+        <h2 className={`text-3xl font-bold ${
+          data.hire_recommendation === "Hire"
+            ? "text-green-400"
+            : "text-red-400"
+        }`}>
+          {data.hire_recommendation === "Hired" ? "Proceed" : "Not Hired"}
+        </h2>
+        <p className="text-gray-400 text-sm mt-3">
+          {data.summary}
+        </p>
+      </div>
+
+      <div className="bg-white/5 border border-white/10 p-6 rounded-2xl text-center">
+        <p className="text-sm text-gray-400 mb-2">Overall Score</p>
+        <h1 className="text-5xl font-bold text-blue-400">
+          {(overallScore * 10 || 0).toFixed(0)}%
+        </h1>
+      </div>
+
+    </div>
+
+    {/* STRENGTHS & WEAKNESSES */}
+    <div className="grid md:grid-cols-2 gap-6">
+      
+      <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
+        <h3 className="font-semibold mb-3 text-green-400">
+          Strengths
+        </h3>
+        <ul className="list-disc ml-5 text-gray-300 text-sm space-y-1">
+          {data.strengths?.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
+        <h3 className="font-semibold mb-3 text-red-400">
+          Improvements
+        </h3>
+        <ul className="list-disc ml-5 text-gray-300 text-sm space-y-1">
+          {data.weaknesses?.map((w, i) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      </div>
+
+    </div>
+
+    {/* SCORES */}
+    <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
+      <h3 className="font-semibold mb-4">Skill Scores</h3>
+
+      <div className="space-y-4">
+        {Object.entries(data.scores || {}).map(([key, value]) => (
+          <div key={key}>
+            <div className="flex justify-between text-sm mb-1">
+              <span className="capitalize text-gray-400">
+                {key.replaceAll("_", " ")}
+              </span>
+              <span className="text-white font-medium">
+                {value * 10}%
+              </span>
             </div>
 
-            <div className="bg-blue-600 p-8 rounded-[2.5rem] flex flex-col items-center justify-center text-center shadow-2xl shadow-blue-900/20">
-              <p className="text-blue-200 font-bold uppercase tracking-tighter text-sm mb-2">Overall Proficiency</p>
-              <h1 className="text-7xl font-black text-white">
-                {(overallScore * 10 || 0).toFixed(0)}<span className="text-2xl opacity-60">%</span>
-              </h1>
-              <div className="mt-4 w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white" style={{ width: `${overallScore * 10}%` }} />
-              </div>
-            </div>
-          </div>
-
-          {/* 2. STRENGTHS & WEAKNESSES (The Summary Part) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-emerald-500/5 border border-emerald-500/20 p-6 rounded-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-emerald-500/20 rounded-lg text-emerald-400"><Trophy size={20} /></div>
-                <h3 className="font-bold text-emerald-100">Key Strengths</h3>
-              </div>
-              <ul className="space-y-3">
-                {data.strengths?.map((s, i) => (
-                  <li key={i} className="flex items-start gap-3 text-emerald-100/80 text-sm">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" /> {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-rose-500/5 border border-rose-500/20 p-6 rounded-3xl">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-rose-500/20 rounded-lg text-rose-400"><AlertCircle size={20} /></div>
-                <h3 className="font-bold text-rose-100">Critical Improvements</h3>
-              </div>
-              <ul className="space-y-3">
-                {data.weaknesses?.map((w, i) => (
-                  <li key={i} className="flex items-start gap-3 text-rose-100/80 text-sm">
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" /> {w}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* 3. METRICS GRID */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(data.scores || {}).map(([key, value]) => (
-              <div key={key} className="bg-black/40 backdrop-blur-xl border border-white/10 p-5 rounded-3xl hover:border-blue-500/30 transition-colors">
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{key.replaceAll("_", " ")}</p>
-                <div className="flex items-end gap-2">
-                  <span className="text-2xl font-bold" style={{ color: getColor(value) }}>{value * 10}%</span>
-                </div>
-                <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${value * 10}%`, backgroundColor: getColor(value) }} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 4. QUESTION PERFORMANCE LIST */}
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-[2.5rem]">
-            <h3 className="font-bold mb-6 flex items-center gap-2">
-              <BarChart3 size={18} className="text-blue-400" />
-              Question-by-Question Breakdown
-            </h3>
-            <div className="space-y-6">
-              {data.questionAnalysis?.map((q, i) => (
-                <div key={i} className="group">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-400">Q{i + 1}: {q.question.substring(0, 50)}...</span>
-                    <span className="font-bold text-sm" style={{ color: getColor(q.score) }}>{q.score * 10}%</span>
-                  </div>
-                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${q.score * 10}%`, backgroundColor: getColor(q.score) }} />
-                  </div>
-                </div>
-              ))}
+            <div className="h-2 bg-white/10 rounded-full">
+              <div
+                className="h-2 bg-blue-500 rounded-full"
+                style={{ width: `${value * 10}%` }}
+              />
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+    </div>
+
+    {/* QUESTION PERFORMANCE */}
+    <div className="bg-white/5 border border-white/10 p-6 rounded-2xl">
+      <h3 className="font-semibold mb-4">
+        Question Performance
+      </h3>
+
+      <div className="space-y-4">
+        {data.questionAnalysis?.map((q, i) => (
+          <div key={i}>
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-400">
+                Q{i + 1}
+              </span>
+              <span className="text-white font-medium">
+                {q.score * 10}%
+              </span>
+            </div>
+
+            <div className="h-2 bg-white/10 rounded-full">
+              <div
+                className="h-2 bg-green-500 rounded-full"
+                style={{ width: `${q.score * 10}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+  </div>
+)}
 
       {tab === "conversation" && (
         <div className="max-w-4xl mx-auto space-y-6">

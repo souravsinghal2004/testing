@@ -111,7 +111,7 @@ export default function PostJobPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white overflow-y-auto hide-scroll">
+    <div className="min-h-screen              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white overflow-y-auto hide-scroll">
       <Header />
 
       <div className="pt-24 pb-12 px-6 max-w-5xl mx-auto">

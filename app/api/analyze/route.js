@@ -66,8 +66,7 @@ ${JSON.stringify(qa)}
       };
     }
 
-    // ✅ SAVE TO DB
- // ✅ SAVE OR UPDATE (UPSERT)
+
 const savedReport = await Report.findOneAndUpdate(
   { userId, jobId }, // 🔍 condition to find existing report
   {
@@ -79,16 +78,14 @@ const savedReport = await Report.findOneAndUpdate(
     ...data,
   },
   {
-    new: true,      // return updated document
-    upsert: true,   // create if not exists
+    new: true,     
+    upsert: true,   
   }
 );
 
-
 console.log("✅ SAVED REPORT:", savedReport);
 
-
-  console.log("👉 BODY:", {
+  console.log(" BODY:", {
   candidateName,
   jobTitle,
   userId,

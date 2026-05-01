@@ -4,7 +4,7 @@ import { Header } from "@/components/inside/Header";
 
 export default function AboutPage() {
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+    <div className="h-screen flex flex-col              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
 
       {/* 🔥 FIXED HEADER */}
       <div className="sticky top-0 z-50">

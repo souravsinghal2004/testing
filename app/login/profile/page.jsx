@@ -18,7 +18,7 @@ export default function ProfilePage() {
   if (!isLoaded || !isSignedIn) return null;
 
   return (
-  <div className="min-h-screen bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
+  <div className="min-h-screen              bg-gradient-to-br from-black via-[#0f172a] to-blue-900 text-white">
     <Header />
 
     <div className="flex">
