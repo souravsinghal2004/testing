@@ -24,7 +24,7 @@ export default function PostJobPage() {
     title: "",
     company: "",
     location: "",
-    workMode: "REMOTE",
+  workMode: "WORK_FROM_HOME",
     jobType: "",
     startDate: "",
     duration: "",
@@ -146,11 +146,16 @@ export default function PostJobPage() {
               name="startDate"
             />
 
-            <select name="workMode" className="input card-hover card-glow card-lift card-border cursor-pointer" onChange={handleChange}>
-              <option value="REMOTE">Remote</option>
-              <option value="OFFICE">In Office</option>
-              <option value="HYBRID">Hybrid</option>
-            </select>
+            <select 
+  name="workMode" 
+  className="input card-hover card-glow card-lift card-border cursor-pointer" 
+  onChange={handleChange}
+  value={form.workMode} // Recommended: bind value to state
+>
+  <option value="WORK_FROM_HOME">Remote</option>
+  <option value="ONSITE">In Office</option>
+  <option value="HYBRID">Hybrid</option>
+</select>
           </section>
 
           {/* DYNAMIC FIELDS: INTERNSHIP */}

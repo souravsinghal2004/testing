@@ -445,21 +445,82 @@ Let's begin with Question 1.`;
     }
   }
 
-  function getGazeDirection(irisCenter, eyeCenter) {
-    const dx = irisCenter.x - eyeCenter.x;
-    const dy = irisCenter.y - eyeCenter.y;
-    if (dx < -0.005) return "LEFT";
-    if (dx > 0.005) return "RIGHT";
-    if (dy < -0.005) return "UP";
-    if (dy > 0.005) return "DOWN";
+  function getGazeDirection(landmarks) {
+    const calculateGaze = (eyeIndices, irisIndices) => {
+      const eyeX = eyeIndices.reduce((sum, i) => sum + landmarks[i].x, 0) / eyeIndices.length;
+      const eyeY = eyeIndices.reduce((sum, i) => sum + landmarks[i].y, 0) / eyeIndices.length;
+      
+      const irisX = irisIndices.reduce((sum, i) => sum + landmarks[i].x, 0) / irisIndices.length;
+      const irisY = irisIndices.reduce((sum, i) => sum + landmarks[i].y, 0) / irisIndices.length;
+      
+      const eyeMinX = Math.min(...eyeIndices.map(i => landmarks[i].x));
+      const eyeMaxX = Math.max(...eyeIndices.map(i => landmarks[i].x));
+      const eyeWidth = eyeMaxX - eyeMinX;
+
+      const eyeMinY = Math.min(...eyeIndices.map(i => landmarks[i].y));
+      const eyeMaxY = Math.max(...eyeIndices.map(i => landmarks[i].y));
+      const eyeHeight = eyeMaxY - eyeMinY;
+
+      if (eyeWidth === 0 || eyeHeight === 0) return { dx: 0, dy: 0, isBlinking: true };
+
+      // Calculate Eye Aspect Ratio (EAR) to detect blinking
+      const ear = eyeHeight / eyeWidth;
+      const isBlinking = ear < 0.18;
+
+      const dx = (irisX - eyeX) / eyeWidth;
+      const dy = (irisY - eyeY) / eyeHeight;
+      
+      return { dx, dy, isBlinking };
+    };
+
+    const leftEyeIndices = [33, 160, 158, 133, 153, 144];
+    const leftIrisIndices = [468, 469, 470, 471];
+    
+    const rightEyeIndices = [362, 385, 387, 263, 373, 380];
+    const rightIrisIndices = [473, 474, 475, 476, 477];
+    
+    const leftGaze = calculateGaze(leftEyeIndices, leftIrisIndices);
+    const rightGaze = calculateGaze(rightEyeIndices, rightIrisIndices);
+    
+    // Ignore gaze detection during a blink to prevent false positives
+    if (leftGaze.isBlinking || rightGaze.isBlinking) {
+      return "CENTER";
+    }
+
+    const avgDx = (leftGaze.dx + rightGaze.dx) / 2;
+    const avgDy = (leftGaze.dy + rightGaze.dy) / 2;
+
+    const HORIZONTAL_THRESHOLD = 0.20; // Fine-tuned for laptop screen edges
+    const VERTICAL_THRESHOLD = 0.20; 
+
+    if (avgDx < -HORIZONTAL_THRESHOLD) return "LEFT";
+    if (avgDx > HORIZONTAL_THRESHOLD) return "RIGHT";
+    if (avgDy < -VERTICAL_THRESHOLD) return "UP";
+    if (avgDy > VERTICAL_THRESHOLD) return "DOWN";
+    
     return "CENTER";
   }
 
-  function getHeadDirection(nose, leftFace, rightFace) {
+  function getHeadDirection(landmarks) {
+    const nose = landmarks[1];
+    const leftFace = landmarks[234];
+    const rightFace = landmarks[454];
+    const topHead = landmarks[10];
+    const chin = landmarks[152];
+
     const midX = (leftFace.x + rightFace.x) / 2.0;
-    const faceBase = Math.abs(leftFace.x - rightFace.x);
-    if (nose.x < midX - faceBase * 0.1) return "RIGHT";
-    if (nose.x > midX + faceBase * 0.1) return "LEFT";
+    const faceWidth = Math.abs(leftFace.x - rightFace.x);
+    
+    const midY = (topHead.y + chin.y) / 2.0;
+    const faceHeight = Math.abs(topHead.y - chin.y);
+
+    // Fine-tuned for laptop presentations
+    if (nose.x < midX - faceWidth * 0.12) return "RIGHT"; 
+    if (nose.x > midX + faceWidth * 0.12) return "LEFT";
+    
+    if (nose.y < midY - faceHeight * 0.10) return "UP"; 
+    if (nose.y > midY + faceHeight * 0.10) return "DOWN";
+
     return "CENTER";
   }
 
@@ -501,21 +562,8 @@ Let's begin with Question 1.`;
     if (results.faceLandmarks.length === 1 && !currentAlert) {
       const landmarks = results.faceLandmarks[0];
       
-      const nose = landmarks[1];
-      const leftFace = landmarks[234];
-      const rightFace = landmarks[454];
-
-      const leftEyeIndices = [33, 160, 158, 133, 153, 144];
-      const leftIrisIndices = [468, 469, 470, 471];
-
-      const leftEyeX = leftEyeIndices.reduce((sum, i) => sum + landmarks[i].x, 0) / 6;
-      const leftEyeY = leftEyeIndices.reduce((sum, i) => sum + landmarks[i].y, 0) / 6;
-
-      const leftIrisX = leftIrisIndices.reduce((sum, i) => sum + landmarks[i].x, 0) / 4;
-      const leftIrisY = leftIrisIndices.reduce((sum, i) => sum + landmarks[i].y, 0) / 4;
-
-      const gaze = getGazeDirection({x: leftIrisX, y: leftIrisY}, {x: leftEyeX, y: leftEyeY});
-      const head = getHeadDirection(nose, leftFace, rightFace);
+      const gaze = getGazeDirection(landmarks);
+      const head = getHeadDirection(landmarks);
 
       if (head !== "CENTER") {
         if (!isHeadAway.current) {
@@ -537,15 +585,16 @@ Let's begin with Question 1.`;
 
       if (head !== "CENTER" || gaze !== "CENTER") {
         lookAwayCounter.current++;
-        if (lookAwayCounter.current > 15) {
+        // 45 frames ≈ 1.5 seconds at 30FPS. Prevents quick glances/blinks from triggering strikes during presentation.
+        if (lookAwayCounter.current > 45) {
           if (!hasTriggeredStrike.current) {
             strikes.current++;
             hasTriggeredStrike.current = true;
           }
-          if (strikes.current >= 3) {
+          if (strikes.current >= 5) {
             currentAlert = "Cheating Detected - Interview Ended";
           } else {
-            currentAlert = `Warning ${strikes.current}/3: Please look at the screen (Anti-Cheat)`;
+            currentAlert = `Warning ${strikes.current}/5: Please look at the screen (Anti-Cheat)`;
           }
         }
       } else {

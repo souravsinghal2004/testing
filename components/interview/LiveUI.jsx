@@ -22,54 +22,45 @@ export default function LiveUI({
   const [isManualEnd, setIsManualEnd] = useState(false);
   const [showEndPopup, setShowEndPopup] = useState(false);
   const [countdown, setCountdown] = useState(3);
-  const streamRef = useRef(null);
   const hasGeneratedRef = useRef(false);
   const lockRef = useRef(false);
 
-const shutdownInterview = async () => {
-  try {
-    // 1. Pehle tracks ko stop karne ki koshish karo
-    const stream = window.__INTERVIEW_STREAM__ || videoRef?.current?.srcObject;
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+  // UPDATED: Now accepts a targetUrl to differentiate Dashboard vs Login
+  const shutdownInterview = async (targetUrl = "/login") => {
+    try {
+      const stream = window.__INTERVIEW_STREAM__ || videoRef?.current?.srcObject;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+
+      window.__INTERVIEW_STREAM__ = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
+
+      // Small delay to ensure tracks are fully released by the OS
+      setTimeout(() => {
+        window.location.href = targetUrl;
+      }, 500);
+    } catch (err) {
+      console.error("Shutdown Error:", err);
+      window.location.href = "/login";
     }
+  };
 
-    // 2. Global reference kill karo
-    window.__INTERVIEW_STREAM__ = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-
-    // 3. Sabse important: Browser ko force karo page reload karne ke liye
-    // Hum dashboard ka URL as a parameter bhej denge
-    const dashboardUrl = `/login/dashboard/${jobId}`;
-    
-    // Thoda sa delay (500ms) taaki stop() command execute ho jaye
-    setTimeout(() => {
-      window.location.href = dashboardUrl; // Ye page ko hard-reload karke waha le jayega
-    }, 500);
-
-  } catch (err) {
-    console.error("Shutdown Error:", err);
-    // Agar kuch phata toh bhi bhag jao yahan se
-    window.location.href = "/login";
-  }
-};
-
-  useEffect(() => {
-    if (showEndPopup) shutdownInterview();
-  }, [showEndPopup]);
-
+  // Triggered by Cheating, Blur, or Manual Terminate Button
   const triggerEndInterview = async () => {
     if (lockRef.current) return;
     lockRef.current = true;
-    await shutdownInterview();
-    endInterviewManually?.();
-    setIsManualEnd(true);
+
+    setIsManualEnd(true); // Flag for Red "Terminated" UI
     setShowEndPopup(true);
+    endInterviewManually?.();
   };
 
+  // Fullscreen and Tab-Switch Monitoring
   useEffect(() => {
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
+
     const handleVisibility = () => { if (document.hidden) triggerEndInterview(); };
     const handleBlur = () => triggerEndInterview();
     const handleFsChange = () => { if (!document.fullscreenElement) triggerEndInterview(); };
@@ -77,6 +68,7 @@ const shutdownInterview = async () => {
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("blur", handleBlur);
     document.addEventListener("fullscreenchange", handleFsChange);
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("blur", handleBlur);
@@ -84,51 +76,51 @@ const shutdownInterview = async () => {
     };
   }, []);
 
+  // Alert Text Monitoring
   useEffect(() => {
     if (alertText === "Cheating Detected - Interview Ended") triggerEndInterview();
   }, [alertText]);
 
-useEffect(() => {
-  if (!interviewEnded || hasGeneratedRef.current) return;
-  
-  hasGeneratedRef.current = true;
-  lockRef.current = true;
-  setShowEndPopup(true); 
+  // SUCCESS PATH: Interview completed naturally
+  useEffect(() => {
+    if (!interviewEnded || hasGeneratedRef.current) return;
 
-  const handleGenerate = async () => {
-    try {
-      // 1. Report generate karo (Background mein)
-      await generateReport();
-      
-      // 2. Report banne ke baad hardware kill aur page redirect ek saath
-      shutdownInterview(); 
-      
-    } catch (e) {
-      console.error("Failed", e);
-      shutdownInterview(); // Error aaye tab bhi hardware bnd karo
+    hasGeneratedRef.current = true;
+    lockRef.current = true;
+    setShowEndPopup(true); // Shows "Processing Results" (Blue UI)
+
+    const handleGenerate = async () => {
+      try {
+        await generateReport();
+        // ONLY path that leads to the Dashboard
+        shutdownInterview(`/login/dashboard/${jobId}`);
+      } catch (e) {
+        console.error("Report Generation Failed", e);
+        shutdownInterview("/login");
+      }
+    };
+
+    handleGenerate();
+  }, [interviewEnded, jobId, generateReport]);
+
+  // FAILURE PATH: Countdown for Manual/Security exits
+  useEffect(() => {
+    if (showEndPopup && isManualEnd && countdown > 0) {
+      const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
     }
-  };
-
-  handleGenerate();
-}, [interviewEnded, jobId, generateReport]);
-
- useEffect(() => {
-  if (showEndPopup && isManualEnd && countdown > 0) {
-    const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
-    return () => clearTimeout(timer);
-  }
-  // Countdown khatam hote hi Hard Reload
-  if (countdown === 0 && isManualEnd) {
-    window.location.href = "/login"; 
-  }
-}, [showEndPopup, countdown, isManualEnd]);
+    
+    // Once countdown hits 0 for manual end, go to Login
+    if (countdown === 0 && isManualEnd) {
+      shutdownInterview("/login");
+    }
+  }, [showEndPopup, countdown, isManualEnd]);
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#020617] text-slate-100 flex flex-col font-sans relative">
-
-    <AnimatePresence>
+      <AnimatePresence>
         {setupPopup && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -140,6 +132,7 @@ useEffect(() => {
           </motion.div>
         )}
       </AnimatePresence>
+
       {/* Background Gradients */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full" />
@@ -226,7 +219,6 @@ useEffect(() => {
         <div className="w-1/2 flex flex-col gap-6">
           <div
             ref={videoContainerRef}
-            // CHANGED: Removed 'border' and 'border-transparent' classes to kill the white outline
             className="relative flex-1 overflow-hidden rounded-[2.5rem] bg-[#020617] group shadow-2xl"
           >
             <AnimatePresence>
@@ -248,23 +240,20 @@ useEffect(() => {
               )}
             </AnimatePresence>
 
-            {/* Corner Brackets */}
             <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-blue-500/30 m-6 rounded-tl-xl z-20 pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-blue-500/30 m-6 rounded-br-xl z-20 pointer-events-none" />
 
-           <video
-  ref={videoRef}
-  autoPlay
-  muted
-  playsInline
-  // showEndPopup aate hi video ko black kar do
-  className={`absolute inset-0 w-full h-full object-cover bg-black scale-x-[-1] transition-opacity duration-500 ${
-    showEndPopup ? "opacity-0" : "opacity-90"
-  }`}
-/>
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className={`absolute inset-0 w-full h-full object-cover bg-black scale-x-[-1] transition-opacity duration-500 ${
+                showEndPopup ? "opacity-0" : "opacity-90"
+              }`}
+            />
           </div>
 
-          {/* CONTROL BOX */}
           <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-4 flex gap-4 backdrop-blur-xl">
             <button
               disabled={processing}
@@ -281,86 +270,82 @@ useEffect(() => {
         </div>
       </main>
 
-<AnimatePresence>
-  {showEndPopup && (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      // Full screen dark overlay with blur
-      className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
-    >
-      <motion.div
-        initial={{ scale: 0.9, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        // The actual Card UI
-        className="relative w-full max-w-lg bg-[#0f172a]/90 border border-white/10 p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
-      >
-        {/* Background Sparkle inside card */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
+      <AnimatePresence>
+        {showEndPopup && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-lg bg-[#0f172a]/90 border border-white/10 p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden"
+            >
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-blue-500/10 blur-[80px] rounded-full pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col items-center text-center">
-          {/* Animated Spinner (Same for both) */}
-          <div className="relative w-24 h-24 mb-8">
-            <motion.div 
-              animate={{ rotate: 360 }} 
-              transition={{ repeat: Infinity, duration: 2, ease: "linear" }} 
-              className={`absolute inset-0 border-t-2 border-b-2 rounded-full ${isManualEnd ? 'border-red-500' : 'border-blue-500'}`} 
-            />
-            <motion.div 
-              animate={{ rotate: -360 }} 
-              transition={{ repeat: Infinity, duration: 4, ease: "linear" }} 
-              className="absolute inset-3 border-l-2 border-r-2 border-white/10 rounded-full" 
-            />
-            <motion.div 
-              animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} 
-              transition={{ repeat: Infinity, duration: 2 }} 
-              className={`absolute inset-8 rounded-full ${isManualEnd ? 'bg-red-500' : 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]'}`}
-            />
-          </div>
+              <div className="relative z-10 flex flex-col items-center text-center">
+                <div className="relative w-24 h-24 mb-8">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                    className={`absolute inset-0 border-t-2 border-b-2 rounded-full ${isManualEnd ? 'border-red-500' : 'border-blue-500'}`}
+                  />
+                  <motion.div
+                    animate={{ rotate: -360 }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                    className="absolute inset-3 border-l-2 border-r-2 border-white/10 rounded-full"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className={`absolute inset-8 rounded-full ${isManualEnd ? 'bg-red-500' : 'bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]'}`}
+                  />
+                </div>
 
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2 italic">
-            {isManualEnd ? "Session Terminated" : "Processing Results"}
-          </h2>
-          
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <span className={`w-1.5 h-1.5 rounded-full animate-ping ${isManualEnd ? 'bg-red-500' : 'bg-blue-500'}`} />
-            <p className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.3em]">
-              {isManualEnd ? "Security_Protocol_Applied" : "AI_Neural_Synthesis"}
-            </p>
-          </div>
+                <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-2 italic">
+                  {isManualEnd ? "Session Terminated" : "Processing Results"}
+                </h2>
 
-          <div className="w-full bg-white/5 p-6 rounded-2xl border border-white/5 backdrop-blur-sm">
-            {isManualEnd ? (
-              <div className="space-y-4">
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  The interview was stopped due to a policy violation or manual exit.
-                </p>
-                <div className="pt-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1">Redirecting to Dashboard</span>
-                  <div className="text-5xl font-black text-red-500 font-mono italic">0{countdown}</div>
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  <span className={`w-1.5 h-1.5 rounded-full animate-ping ${isManualEnd ? 'bg-red-500' : 'bg-blue-500'}`} />
+                  <p className="text-slate-400 font-mono text-[10px] uppercase tracking-[0.3em]">
+                    {isManualEnd ? "Security_Protocol_Applied" : "AI_Neural_Synthesis"}
+                  </p>
+                </div>
+
+                <div className="w-full bg-white/5 p-6 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  {isManualEnd ? (
+                    <div className="space-y-4">
+                      <p className="text-sm text-slate-400 leading-relaxed">
+                        The interview was stopped due to a policy violation or manual exit.
+                      </p>
+                      <div className="pt-2">
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest block mb-1">Redirecting to Login</span>
+                        <div className="text-5xl font-black text-red-500 font-mono italic">0{countdown}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <p className="text-sm text-slate-400 leading-relaxed">
+                        Please wait while our AI analyzes your performance and generates the final report.
+                      </p>
+                      <div className="flex justify-center gap-1">
+                        <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1 h-1 bg-blue-400 rounded-full" />
+                        <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1 h-1 bg-blue-400 rounded-full" />
+                        <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1 h-1 bg-blue-400 rounded-full" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Please wait while our AI analyzes your performance and generates the final report.
-                </p>
-                <div className="flex justify-center gap-1">
-                  <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1 h-1 bg-blue-400 rounded-full" />
-                  <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1 h-1 bg-blue-400 rounded-full" />
-                  <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1 h-1 bg-blue-400 rounded-full" />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <footer className="h-6" />
     </div>

@@ -127,15 +127,16 @@ export default function InterviewSetup() {
           </div>
 
           {/* Setup Grid */}
-          <div className="grid md:grid-cols-2 gap-8">
+         {/* Setup Grid */}
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
             
             {/* Video Feed */}
             <motion.div 
               whileHover={{ y: -5 }}
-              className="group relative"
+              className="group relative flex flex-col"
             >
               <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-3xl blur opacity-20 group-hover:opacity-40 transition" />
-              <div className="relative bg-black rounded-3xl overflow-hidden border border-white/10 aspect-video md:h-80">
+              <div className="relative bg-black rounded-3xl overflow-hidden border border-white/10 aspect-video flex-grow flex items-center justify-center">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -143,12 +144,11 @@ export default function InterviewSetup() {
                   playsInline
                   className="w-full h-full object-cover scale-x-[-1]"
                 />
-                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full border border-white/10">
+                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 bg-black/50 backdrop-blur-md rounded-full border border-white/10 z-20">
                   <div className={`w-2 h-2 rounded-full ${mediaAllowed ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                   <span className="text-[10px] uppercase font-bold tracking-widest text-white/70">Video Feed</span>
                 </div>
                 
-                {/* Visual Scanning Effect */}
                 <div className="absolute inset-0 pointer-events-none border-[20px] border-transparent group-hover:border-blue-500/5 transition-all duration-500" />
               </div>
             </motion.div>
@@ -156,10 +156,10 @@ export default function InterviewSetup() {
             {/* Audio Feed */}
             <motion.div 
               whileHover={{ y: -5 }}
-              className="group relative"
+              className="group relative flex flex-col"
             >
               <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-3xl blur opacity-10 group-hover:opacity-30 transition" />
-              <div className={`relative h-full md:h-80 rounded-3xl flex flex-col items-center justify-center border transition-all duration-500 ${
+              <div className={`relative flex-grow min-h-[200px] md:min-h-full rounded-3xl flex flex-col items-center justify-center border transition-all duration-500 py-8 ${
                 isSpeaking ? "bg-emerald-500/10 border-emerald-500/40" : "bg-black border-white/10"
               }`}>
                 
@@ -184,7 +184,7 @@ export default function InterviewSetup() {
                 <p className={`text-xs font-bold uppercase tracking-[0.2em] transition-colors ${isSpeaking ? 'text-emerald-400' : 'text-slate-500'}`}>
                   {isSpeaking ? "Voice Signal Detected" : "Microphone Testing"}
                 </p>
-                <p className="text-[10px] text-slate-600 mt-2 font-mono italic">
+                <p className="text-[10px] text-slate-600 mt-2 font-mono italic px-4 text-center">
                   {isSpeaking ? "Perfect. Proceed when ready." : "Try speaking to confirm audio..."}
                 </p>
               </div>
