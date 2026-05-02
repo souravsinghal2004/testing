@@ -16,6 +16,7 @@ export default function LiveUI({
   jobId,
   endInterviewManually,
   alertText,
+  setupPopup,
 }) {
   const router = useRouter();
   const [isManualEnd, setIsManualEnd] = useState(false);
@@ -124,6 +125,21 @@ useEffect(() => {
 
   return (
     <div className="h-screen w-full overflow-hidden bg-[#020617] text-slate-100 flex flex-col font-sans relative">
+
+    <AnimatePresence>
+        {setupPopup && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center"
+          >
+            <div className="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6" />
+            <h2 className="text-2xl font-bold text-white animate-pulse">Setting up your interview...</h2>
+            <p className="text-slate-400 mt-2 font-mono text-sm">Initializing Neural Link & Camera</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Background Gradients */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full" />

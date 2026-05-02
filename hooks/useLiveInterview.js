@@ -184,47 +184,34 @@ export default function useLiveInterview() {
   }
 
   /* ---------------- START ---------------- */
-  async function startInterview() {
+/* ---------------- START ---------------- */
+async function startInterview() {
+  if (isInterviewStoppedRef.current) return;
+  console.log("🎬 START INTERVIEW");
 
-    if (isInterviewStoppedRef.current) return;
-    console.log("🎬 START INTERVIEW");
+  const greeting = generateGreeting();
+  
+  // 1. Instantly hide the popup as soon as the greeting is ready to be spoken
+  setSetupPopup(false); 
 
-    const greeting = generateGreeting();
-    setSetupPopup(false);
+  setMessages([{ sender: "ai", text: greeting }]);
 
-    setMessages([{ sender: "ai", text: greeting }]);
+  // 2. Start speaking the greeting
+  await new Promise(res => speak(greeting, () => {
+    console.log("Greeting speech finished");
+    res();
+  }));
 
-    await new Promise(res => speak(greeting, res));
+  questionCount.current = 0;
+  const total = jobData?.no_of_questions || 2;
 
-    questionCount.current = 0;
-
-    console.log("🎯 START DATA:", {
-  dbQuestions,
-  total: jobData?.no_of_questions
-});
-
-    const total = jobData?.no_of_questions || 2;
-
-    const isPureDB = dbQuestions.length >= total;
-    const isHybrid = dbQuestions.length > 0 && dbQuestions.length < total;
-    const isAIOnly = dbQuestions.length === 0;
-
-    console.log("📊 MODE CHECK:", {
-      total,
-      dbLength: dbQuestions.length,
-      isPureDB,
-      isHybrid,
-      isAIOnly
-    });
-
-    if (isPureDB || isHybrid) {
-      console.log("👉 FIRST QUESTION FROM DB");
-      addAI(dbQuestions[0]);
-    } else {
-      console.log("👉 FIRST QUESTION FROM AI");
-      await generateAIQuestion();
-    }
+  // 3. Proceed to the first question
+  if (dbQuestions.length > 0) {
+    addAI(dbQuestions[0]);
+  } else {
+    await generateAIQuestion();
   }
+}
 
   /* ---------------- AI QUESTION ---------------- */
   async function generateAIQuestion(userText = "") {
@@ -392,25 +379,32 @@ export default function useLiveInterview() {
   }
 
   /* ---------------- FINISH ---------------- */
-  async function finishInterview() {
-    if (isEndingRef.current) return;
+  /* ---------------- FINISH ---------------- */
+async function finishInterview() {
+  if (isEndingRef.current) return;
 
-    console.log("🏁 FINISH INTERVIEW");
-
-    isEndingRef.current = true;
-    speechSynthesis.cancel();
-    stopRecording();
-
-    const msg = `Thank you for participating. Your interview is now complete. Your responses have been recorded and will be evaluated automatically. We wish you the best of luck.`;
-
-    setMessages(prev => [...prev, { sender: "ai", text: msg }]);
-
-    speak(msg, async () => {
-      console.log("📊 GENERATING REPORT...");
-      await generateReport();
-      setInterviewEnded(true);
-    });
+  console.log("🏁 FINISH INTERVIEW");
+  isEndingRef.current = true;
+  speechSynthesis.cancel();
+  
+  // Recording band karo bina processing state trigger kiye
+  if (recorderRef.current?.state !== "inactive") {
+    recorderRef.current.stop();
   }
+
+  const msg = `Thank you for participating. Your interview is now complete. Your responses have been recorded and will be evaluated automatically. We wish you the best of luck.`;
+
+  setMessages(prev => [...prev, { sender: "ai", text: msg }]);
+
+  // Race condition fix: Speak khatam hone ke BAAD report generate hogi
+  speak(msg, async () => {
+    console.log("📊 VOICE COMPLETE -> GENERATING REPORT...");
+    // Interview ended state set karne se pehle report call karenge
+    // Taaki UI popup (Processing Results) sahi time pe aaye
+    setInterviewEnded(true); 
+    await generateReport();
+  });
+}
 
   /* ---------------- MEDIA ---------------- */
   async function initMedia() {
@@ -654,6 +648,7 @@ Let's begin with Question 1.`;
     generateReport,
     jobId,
     endInterviewManually,
+    setupPopup,
     alertText
   };
 }

@@ -53,8 +53,21 @@ export default function DashboardPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center text-red-500">
-        No report found
+      <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center gap-6">
+        <div className="text-red-400 bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl font-medium backdrop-blur-md">
+          No report found
+        </div>
+        
+        <button
+          onClick={() => router.push("/login")}
+          className="group flex items-center gap-3 bg-white text-black pl-6 pr-5 py-3.5 rounded-full font-bold shadow-[0_20px_40px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-all"
+          title="Go to Home"
+        >
+          <span className="text-sm">Go to Home</span>
+          <div className="bg-black text-white p-2 rounded-full group-hover:bg-blue-600 transition-colors">
+            <Home size={18} />
+          </div>
+        </button>
       </div>
     );
   }

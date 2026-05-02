@@ -4,13 +4,17 @@ import Report from "@/app/models/Report";
 
 export async function POST(req) {
   try {
-    await connectDB(); // ✅ connect Mongo
+    await connectDB();
 
-  const { qa, jobTitle, candidateName, userId, jobId } = await req.json();
+    const { qa, jobTitle, candidateName, userId, jobId } = await req.json();
+
+    // 1. Deduplicate by question text to prevent duplicates in DB and AI Analysis
+    const uniqueQA = Array.from(
+      new Map(qa.map((item) => [item.question, item])).values()
+    );
 
     const prompt = `
 You are an expert HR interviewer.
-
 Return ONLY valid JSON in this format:
 
 {
@@ -42,21 +46,19 @@ Candidate Name: ${candidateName}
 Job Role: ${jobTitle}
 
 Q&A:
-${JSON.stringify(qa)}
+${JSON.stringify(uniqueQA)}
 `;
 
+    // 2. Call AI with unique data
     const response = await openrouter.chat.completions.create({
       model: MODEL,
       messages: [{ role: "user", content: prompt }],
     });
 
     let text = response.choices[0].message.content;
-
-    // 🔥 CLEAN JSON
     text = text.replace(/```json/g, "").replace(/```/g, "").trim();
 
     let data;
-
     try {
       data = JSON.parse(text);
     } catch {
@@ -66,32 +68,24 @@ ${JSON.stringify(qa)}
       };
     }
 
+    // 3. Save uniqueQA to the database
+    const savedReport = await Report.findOneAndUpdate(
+      { userId, jobId },
+      {
+        candidateName,
+        jobTitle,
+        userId,
+        jobId,
+        qa: uniqueQA, // Use deduplicated array here
+        ...data,
+      },
+      {
+        new: true,
+        upsert: true,
+      }
+    );
 
-const savedReport = await Report.findOneAndUpdate(
-  { userId, jobId }, // 🔍 condition to find existing report
-  {
-    candidateName,
-    jobTitle,
-    userId,
-    jobId,
-    qa,
-    ...data,
-  },
-  {
-    new: true,     
-    upsert: true,   
-  }
-);
-
-console.log("✅ SAVED REPORT:", savedReport);
-
-  console.log(" BODY:", {
-  candidateName,
-  jobTitle,
-  userId,
-  jobId,
-  qa
-});
+    console.log("✅ SAVED REPORT (Deduplicated):", savedReport._id);
 
     return Response.json({
       success: true,
@@ -99,11 +93,9 @@ console.log("✅ SAVED REPORT:", savedReport);
     });
 
   } catch (err) {
-    console.error(err);
-
+    console.error("❌ Analysis Error:", err);
     return Response.json({
       error: "Server error",
     });
   }
-
 }
